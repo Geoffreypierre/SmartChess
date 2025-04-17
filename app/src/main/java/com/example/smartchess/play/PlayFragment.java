@@ -36,7 +36,12 @@ public class PlayFragment extends Fragment {
 
     private void setupListeners() {
         cardPartieLocale.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Création d'une partie différée", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Création d'une partie locale", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getActivity(), ChessGameActivity.class);
+            intent.putExtra("game_mode", "local");
+            startActivity(intent);
+
+
         });
 
         cardPartieEnLigne.setOnClickListener(v -> {
