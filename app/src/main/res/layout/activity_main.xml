@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/home_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1E1E2D">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="115dp"
+        android:layout_marginTop="75dp"
+        android:text="SmartChess"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="50sp"
+        android:textStyle="bold" />
+
+    <!-- Logo -->
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="107dp"
+        android:layout_height="132dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100dp"
+        android:layout_below="@id/title"
+        android:src="@drawable/home"
+        android:contentDescription="Logo" />
+
+    <!-- Connexion Button -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnConnexion"
+        android:layout_width="wrap_content"
+        android:paddingHorizontal="75dp"
+        android:layout_height="55sp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="120dp"
+        android:layout_below="@id/logo"
+        android:background="@drawable/btn_connexion"
+        android:text="Connexion"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textAllCaps="false"
+        android:textStyle="bold" />
+
+    <!-- Inscription Button -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnInscription"
+        android:layout_width="wrap_content"
+        android:paddingHorizontal="75dp"
+        android:layout_height="55sp"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/btnConnexion"
+        android:layout_marginTop="50dp"
+        android:background="@drawable/btn_inscription"
+        android:text="Inscription"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="false"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>

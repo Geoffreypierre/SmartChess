@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_jouer"
+        android:icon="@drawable/bottom_bar_play"
+        android:title="Jouer" />
+    <item
+        android:id="@+id/nav_amis"
+        android:icon="@drawable/bottom_bar_friends"
+        android:title="Amis" />
+    <item
+        android:id="@+id/nav_historique"
+        android:icon="@drawable/bottom_bar_history"
+        android:title="Historique" />
+    <item
+        android:id="@+id/nav_profil"
+        android:icon="@drawable/bottom_bar_profile"
+        android:title="Profil" />
+</menu>

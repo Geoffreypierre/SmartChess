@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1E1E2D">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:text="Inscription"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="40sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/question"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:layout_marginTop="80dp"
+        android:layout_marginHorizontal="20dp"
+        android:text="Quel est votre niveau aux échecs ?"
+        android:textColor="#FFFFFF"
+        android:textSize="25sp" />
+
+    <RelativeLayout
+        android:id="@+id/option_debutant"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:layout_below="@id/question"
+        android:layout_marginTop="50dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@drawable/insc_selected_option_background">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="30dp"
+            android:text="Débutant"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp" />
+
+        <ImageView
+            android:id="@+id/img_debutant"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="40dp"
+            android:src="@drawable/insc_pawn"
+            android:contentDescription="Pion d'échecs" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/option_intermediaire"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:layout_below="@id/option_debutant"
+        android:layout_marginTop="20dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@drawable/insc_unselected_option_background">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="30dp"
+            android:text="Intermédiaire"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp" />
+
+        <ImageView
+            android:id="@+id/img_intermediaire"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="40dp"
+            android:src="@drawable/insc_knight"
+            android:contentDescription="Cavalier d'échecs" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/option_avance"
+        android:layout_width="match_parent"
+        android:layout_height="90dp"
+        android:layout_below="@id/option_intermediaire"
+        android:layout_marginTop="20dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@drawable/insc_unselected_option_background">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="30dp"
+            android:text="Avancé"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp" />
+
+        <ImageView
+            android:id="@+id/img_avance"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="40dp"
+            android:src="@drawable/insc_rook"
+            android:contentDescription="Tour d'échecs" />
+    </RelativeLayout>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnValider"
+        android:layout_width="wrap_content"
+        android:paddingHorizontal="75dp"
+        android:layout_height="55dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="80dp"
+        android:layout_below="@id/option_avance"
+        android:background="@drawable/btn_connexion"
+        android:text="Valider"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+</RelativeLayout>
