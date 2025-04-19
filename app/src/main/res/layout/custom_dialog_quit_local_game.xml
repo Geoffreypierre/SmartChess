@@ -41,7 +41,7 @@
             android:weightSum="2">
 
             <Button
-                android:id="@+id/btn_quitter"
+                android:id="@+id/btn_quitter_local_game"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.8"
@@ -54,7 +54,7 @@
                 android:padding="12dp" />
 
             <Button
-                android:id="@+id/btn_annuler"
+                android:id="@+id/btn_annuler_local_game"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.8"

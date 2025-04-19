@@ -35,7 +35,7 @@ public class ChessGameActivity extends AppCompatActivity {
     GameMode mode;
 
     AppCompatButton quitBtn;
-    Button btnDialogQuit, btnDialogCancel;
+    Button btnQuitLocalGame, btnDialogCancel;
 
     Dialog dialog;
 
@@ -99,19 +99,17 @@ public class ChessGameActivity extends AppCompatActivity {
         chessBoardView.setGameController(controller);
 
         dialog = new Dialog(ChessGameActivity.this);
-        dialog.setContentView(R.layout.custom_dialog_box);
+        dialog.setContentView(R.layout.custom_dialog_quit_local_game);
         dialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        dialog.getWindow().setBackgroundDrawable(getDrawable(R.drawable.custom_background_dialog));
+        dialog.getWindow().setBackgroundDrawable(getDrawable(R.drawable.custom_bg_dialog));
         dialog.setCancelable(false);
 
-        btnDialogQuit = dialog.findViewById(R.id.btn_quitter);
-        btnDialogCancel = dialog.findViewById(R.id.btn_annuler);
+        btnQuitLocalGame = dialog.findViewById(R.id.btn_quitter_local_game);
+        btnDialogCancel = dialog.findViewById(R.id.btn_annuler_local_game);
 
-        btnDialogQuit.setOnClickListener(new View.OnClickListener() {
+        btnQuitLocalGame.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ChessGameActivity.this, PlayActivity.class);
-                startActivity(intent);
                 Toast.makeText(ChessGameActivity.this, "Fin de la partie", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
                 finish();
