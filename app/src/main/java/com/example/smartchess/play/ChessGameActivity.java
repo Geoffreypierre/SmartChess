@@ -1,10 +1,17 @@
 package com.example.smartchess.play;
 
+import android.annotation.SuppressLint;
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
@@ -27,6 +34,12 @@ public class ChessGameActivity extends AppCompatActivity {
     ChessGame game;
     GameMode mode;
 
+    AppCompatButton quitBtn;
+    Button btnDialogQuit, btnDialogCancel;
+
+    Dialog dialog;
+
+    @SuppressLint("UseCompatLoadingForDrawables")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +50,8 @@ public class ChessGameActivity extends AppCompatActivity {
         playerInfoViewBlack = findViewById(R.id.playerInfoBlack);
 
         chessBoardView = findViewById(R.id.chessBoardView);
+
+        quitBtn = findViewById(R.id.quit_button);
 
         game = new ChessGame();
 
@@ -79,12 +94,43 @@ public class ChessGameActivity extends AppCompatActivity {
             }
         });
 
-
-
-
         ChessGameController controller = new ChessGameController(game, chessBoardView, mode,
                 playerInfoViewWhite, playerInfoViewBlack);
         chessBoardView.setGameController(controller);
+
+        dialog = new Dialog(ChessGameActivity.this);
+        dialog.setContentView(R.layout.custom_dialog_box);
+        dialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        dialog.getWindow().setBackgroundDrawable(getDrawable(R.drawable.custom_background_dialog));
+        dialog.setCancelable(false);
+
+        btnDialogQuit = dialog.findViewById(R.id.btn_quitter);
+        btnDialogCancel = dialog.findViewById(R.id.btn_annuler);
+
+        btnDialogQuit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ChessGameActivity.this, PlayActivity.class);
+                startActivity(intent);
+                Toast.makeText(ChessGameActivity.this, "Fin de la partie", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                finish();
+            }
+        });
+
+        btnDialogCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        quitBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.show();
+            }
+        });
 
 
     }
