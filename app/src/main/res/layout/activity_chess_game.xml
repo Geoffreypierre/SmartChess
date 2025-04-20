@@ -11,7 +11,6 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <!-- Informations du joueur blanc -->
         <com.example.smartchess.chess.playerinfos.PlayerInfoView
             android:id="@+id/playerInfoWhite"
             android:layout_width="match_parent"

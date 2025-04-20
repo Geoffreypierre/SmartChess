@@ -13,15 +13,25 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.smartchess.MainActivity;
 import com.example.smartchess.R;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SecondInscriptionActivity extends AppCompatActivity {
 
@@ -33,9 +43,10 @@ public class SecondInscriptionActivity extends AppCompatActivity {
     private String niveauSelectionne;
     private Uri profileImageUri = null;
 
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private FirebaseStorage storage = FirebaseStorage.getInstance();
-    private StorageReference storageRef = storage.getReference();
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private FirebaseStorage storage;
+    private StorageReference storageRef;
 
     private ActivityResultLauncher<String> getContent = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
@@ -52,6 +63,12 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_inscription_second);
+
+        // Initialiser Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        storageRef = storage.getReference();
 
         if (getIntent().hasExtra("NIVEAU_SELECTIONNE")) {
             niveauSelectionne = getIntent().getStringExtra("NIVEAU_SELECTIONNE");
@@ -92,7 +109,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (validateForm()) {
-                    saveUserToFirestore();
+                    registerUser();
                 }
             }
         });
@@ -149,12 +166,33 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         editMotDePasse.setSelection(editMotDePasse.getText().length());
     }
 
-    private void saveUserToFirestore() {
-        String username = editNomUtilisateur.getText().toString().trim();
+    private void registerUser() {
         String email = editAdresseMail.getText().toString().trim();
         String password = editMotDePasse.getText().toString().trim();
 
+        // Créer l'utilisateur avec Firebase Auth
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Inscription réussie
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            saveUserInfo(user.getUid());
+                        } else {
+                            // Échec de l'inscription
+                            Toast.makeText(SecondInscriptionActivity.this,
+                                    "Échec de l'inscription: " + task.getException().getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
 
+    private void saveUserInfo(String userId) {
+        String username = editNomUtilisateur.getText().toString().trim();
+
+        // Déterminer l'Elo initial en fonction du niveau
         int initialElo;
         switch (niveauSelectionne) {
             case "Intermédiaire":
@@ -169,14 +207,13 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         }
 
         if (profileImageUri != null) {
-            uploadProfileImageAndSaveUser(username, email, password, initialElo);
+            uploadProfileImageAndSaveUser(userId, username, initialElo);
         } else {
-            saveUserWithoutImage(username, email, password, initialElo);
+            saveUserToFirestore(userId, username, initialElo, "");
         }
     }
 
-    private void uploadProfileImageAndSaveUser(String username, String email, String password, int elo) {
-        String userId = db.collection("users").document().getId();
+    private void uploadProfileImageAndSaveUser(String userId, String username, int elo) {
         StorageReference imageRef = storageRef.child("profile_images/" + userId + ".jpg");
 
         imageRef.putFile(profileImageUri)
@@ -186,15 +223,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                         imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                             @Override
                             public void onSuccess(Uri downloadUrl) {
-                                User user = new User(
-                                        username,
-                                        email,
-                                        password,
-                                        elo,
-                                        downloadUrl.toString()
-                                );
-
-                                saveUserToFirestore(userId, user);
+                                saveUserToFirestore(userId, username, elo, downloadUrl.toString());
                             }
                         });
                     }
@@ -203,28 +232,29 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                     Toast.makeText(SecondInscriptionActivity.this,
                             "Échec du téléchargement de l'image: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
+                    // Sauvegarder quand même l'utilisateur sans image
+                    saveUserToFirestore(userId, username, elo, null);
                 });
     }
 
-    private void saveUserWithoutImage(String username, String email, String password, int elo) {
-        String userId = db.collection("users").document().getId();
-        User user = new User(
-                username,
-                email,
-                password,
-                elo
-        );
+    private void saveUserToFirestore(String userId, String username, int elo, String profilePicture) {
+        Map<String, Object> user = new HashMap<>();
+        user.put("id", userId);
+        user.put("username", username);
+        user.put("elo", elo);
+        user.put("profilePicture", profilePicture);
+        user.put("friends", new ArrayList<String>());
 
-        saveUserToFirestore(userId, user);
-    }
-
-    private void saveUserToFirestore(String userId, User user) {
         db.collection("users").document(userId)
                 .set(user)
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(SecondInscriptionActivity.this,
-                            "Inscription réussie !, Elo: " + user.getElo(),
+                            "Inscription réussie !, Elo: " + elo,
                             Toast.LENGTH_LONG).show();
+
+                    // Sauvegarder les infos utilisateur dans UserSession
+                    UserSession userSession = new UserSession(SecondInscriptionActivity.this);
+                    userSession.createLoginSession(userId, username, elo, profilePicture);
 
                     Intent intent = new Intent(SecondInscriptionActivity.this, MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -233,7 +263,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(SecondInscriptionActivity.this,
-                            "Échec de l'inscription: " + e.getMessage(),
+                            "Échec de l'enregistrement des informations: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
                 });
     }

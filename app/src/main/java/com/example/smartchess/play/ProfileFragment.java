@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment;
 
 import com.example.smartchess.R;
 import com.example.smartchess.auth.UserSession;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.squareup.picasso.Picasso;
 
 public class ProfileFragment extends Fragment {
@@ -25,6 +27,7 @@ public class ProfileFragment extends Fragment {
     private ImageView imgProfile;
 
     private UserSession userSession;
+    private FirebaseAuth mAuth;
 
     @Nullable
     @Override
@@ -32,9 +35,9 @@ public class ProfileFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
         userSession = new UserSession(getContext());
+        mAuth = FirebaseAuth.getInstance();
 
         initViews(view);
-
         loadProfileData();
 
         return view;
@@ -49,31 +52,53 @@ public class ProfileFragment extends Fragment {
     }
 
     /**
-     * Charge les données du profil utilisateur depuis la session
+     * Charge les données du profil utilisateur depuis la session et Firebase Auth
      */
     private void loadProfileData() {
         try {
+            // Récupérer les informations stockées dans la session
             String username = userSession.getUsername();
-            String email = userSession.getEmail();
-            String niveau = userSession.getNiveau();
             int elo = userSession.getElo();
-            String profileImageUrl = userSession.getProfileImageUrl();
+            String profilePicture = userSession.getProfilePicture();
 
+            // Récupérer l'email depuis Firebase Auth
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            String email = currentUser != null ? currentUser.getEmail() : "Non disponible";
+
+            // Déterminer le niveau en fonction de l'ELO
+            String niveau = determineLevel(elo);
+
+            // Mettre à jour l'interface
             txtUsername.setText(username);
             txtEmailValue.setText(email);
             txtEloValue.setText(String.valueOf(elo));
             txtRankValue.setText(niveau);
 
-            if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+            if (profilePicture != null && !profilePicture.isEmpty()) {
                 Picasso.get()
-                        .load(profileImageUrl)
+                        .load(profilePicture)
                         .placeholder(R.drawable.profile_picture_placeholder)
                         .error(R.drawable.profile_picture_placeholder)
                         .into(imgProfile);
+            } else {
+                imgProfile.setImageResource(R.drawable.profile_picture_placeholder);
             }
         } catch (Exception e) {
             Toast.makeText(getContext(), "Erreur lors du chargement du profil", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Détermine le niveau du joueur en fonction de son score ELO
+     */
+    private String determineLevel(int elo) {
+        if (elo < 1400) {
+            return "Débutant";
+        } else if (elo < 1700) {
+            return "Intermédiaire";
+        } else {
+            return "Avancé";
         }
     }
 }

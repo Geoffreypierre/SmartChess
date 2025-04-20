@@ -11,22 +11,29 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.smartchess.play.PlayActivity;
 import com.example.smartchess.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class ConnexionActivity extends AppCompatActivity {
 
-    private EditText editNomUtilisateur, editMotDePasse;
+    private EditText editAdresseMail, editMotDePasse;
     private ImageView togglePassword;
     private Button btnConnexion;
     private TextView btnInscription;
     private boolean isPasswordVisible = false;
 
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,12 +41,16 @@ public class ConnexionActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_connexion);
 
+        // Initialiser Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
         initViews();
         setupListeners();
     }
 
     private void initViews() {
-        editNomUtilisateur = findViewById(R.id.edit_nom_utilisateur);
+        editAdresseMail = findViewById(R.id.edit_adresse_mail);
         editMotDePasse = findViewById(R.id.edit_mot_de_passe);
         togglePassword = findViewById(R.id.toggle_password);
         btnConnexion = findViewById(R.id.btn_connexion);
@@ -75,11 +86,14 @@ public class ConnexionActivity extends AppCompatActivity {
     private boolean validateForm() {
         boolean isValid = true;
 
-        String username = editNomUtilisateur.getText().toString().trim();
+        String email = editAdresseMail.getText().toString().trim();
         String password = editMotDePasse.getText().toString().trim();
 
-        if (TextUtils.isEmpty(username)) {
-            editNomUtilisateur.setError("Veuillez entrer un nom d'utilisateur");
+        if (TextUtils.isEmpty(email)) {
+            editAdresseMail.setError("Veuillez entrer une adresse email");
+            isValid = false;
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            editAdresseMail.setError("Adresse email invalide");
             isValid = false;
         }
 
@@ -104,55 +118,61 @@ public class ConnexionActivity extends AppCompatActivity {
     }
 
     private void connectUser() {
-        String username = editNomUtilisateur.getText().toString().trim();
+        String email = editAdresseMail.getText().toString().trim();
         String password = editMotDePasse.getText().toString().trim();
 
         showLoading(true);
 
-        db.collection("users")
-                .whereEqualTo("username", username)
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Connexion réussie
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            loadUserInfo(user.getUid());
+                        } else {
+                            // Échec de la connexion
+                            showLoading(false);
+                            Toast.makeText(ConnexionActivity.this,
+                                    "Échec de la connexion: Email ou mot de passe incorrect",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
+    private void loadUserInfo(String userId) {
+        db.collection("users").document(userId)
                 .get()
                 .addOnCompleteListener(task -> {
                     showLoading(false);
 
                     if (task.isSuccessful()) {
-                        boolean userFound = false;
+                        DocumentSnapshot document = task.getResult();
+                        if (document.exists()) {
+                            String username = document.getString("username");
+                            int elo = document.getLong("elo") != null ? document.getLong("elo").intValue() : 1200;
+                            String profilePicture = document.getString("profilePicture");
 
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            String storedPassword = document.getString("password");
-
-                            if (storedPassword != null && storedPassword.equals(password)) {
-                                userFound = true;
-
-                                String userId = document.getId();
-                                String email = document.getString("email");
-                                String niveau = document.getString("niveau");
-                                int elo = document.getLong("elo") != null ? document.getLong("elo").intValue() : 1200;
-                                String profileImageUrl = document.getString("profileImageUrl");
-
-                                saveUserSession(userId, username, email, niveau, elo, profileImageUrl);
-
-                                navigateToPlayScreen();
-                                break;
-                            }
-                        }
-
-                        if (!userFound) {
+                            saveUserSession(userId, username, elo, profilePicture);
+                            navigateToPlayScreen();
+                        } else {
                             Toast.makeText(ConnexionActivity.this,
-                                    "Nom d'utilisateur ou mot de passe incorrect",
+                                    "Erreur: informations utilisateur introuvables",
                                     Toast.LENGTH_SHORT).show();
                         }
                     } else {
                         Toast.makeText(ConnexionActivity.this,
-                                "Erreur lors de la connexion: " + task.getException().getMessage(),
+                                "Erreur lors du chargement des informations: " + task.getException().getMessage(),
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
-    private void saveUserSession(String userId, String username, String email, String niveau, int elo, String profileImageUrl) {
+    private void saveUserSession(String userId, String username, int elo, String profilePicture) {
         UserSession userSession = new UserSession(this);
-        userSession.createLoginSession(userId, username, email, niveau, elo, profileImageUrl);
+        userSession.createLoginSession(userId, username, elo, profilePicture);
     }
 
     private void navigateToPlayScreen() {
