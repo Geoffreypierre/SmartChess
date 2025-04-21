@@ -41,7 +41,6 @@ public class ConnexionActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_connexion);
 
-        // Initialiser Firebase Auth
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
@@ -128,11 +127,9 @@ public class ConnexionActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            // Connexion réussie
                             FirebaseUser user = mAuth.getCurrentUser();
                             loadUserInfo(user.getUid());
                         } else {
-                            // Échec de la connexion
                             showLoading(false);
                             Toast.makeText(ConnexionActivity.this,
                                     "Échec de la connexion: Email ou mot de passe incorrect",

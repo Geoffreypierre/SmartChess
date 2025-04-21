@@ -52,6 +52,7 @@ public class FriendsFragment extends Fragment {
     private SearchResultsAdapter searchResultsAdapter;
     private List<UserModel> friendsList;
     private List<UserModel> searchResultsList;
+    private List<String> currentFriendIds;
 
     @Nullable
     @Override
@@ -85,6 +86,7 @@ public class FriendsFragment extends Fragment {
     private void setupRecyclerViews() {
         friendsList = new ArrayList<>();
         searchResultsList = new ArrayList<>();
+        currentFriendIds = new ArrayList<>();
 
         friendsAdapter = new FriendsAdapter(friendsList);
         friendsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -137,8 +139,10 @@ public class FriendsFragment extends Fragment {
                                 List<String> friendIds = (List<String>) document.get("friends");
 
                                 if (friendIds != null && !friendIds.isEmpty()) {
+                                    currentFriendIds = new ArrayList<>(friendIds);
                                     loadFriendsDetails(friendIds);
                                 } else {
+                                    currentFriendIds = new ArrayList<>();
                                     placeholderText.setVisibility(View.VISIBLE);
                                     friendsRecyclerView.setVisibility(View.GONE);
                                 }
@@ -200,7 +204,9 @@ public class FriendsFragment extends Fragment {
                                     long elo = document.getLong("elo") != null ? document.getLong("elo") : 0;
                                     String profilePicture = document.getString("profilePicture");
 
-                                    UserModel user = new UserModel(id, username, (int) elo, profilePicture);
+                                    boolean isAlreadyFriend = currentFriendIds.contains(id);
+
+                                    UserModel user = new UserModel(id, username, (int) elo, profilePicture, isAlreadyFriend);
                                     searchResultsList.add(user);
                                 }
                             }
@@ -222,6 +228,11 @@ public class FriendsFragment extends Fragment {
     }
 
     private void addFriend(String friendId) {
+        if (currentFriendIds.contains(friendId)) {
+            Toast.makeText(getContext(), "Cet utilisateur est déjà votre ami", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         db.collection("users").document(currentUserId).get()
                 .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                     @Override
@@ -241,7 +252,51 @@ public class FriendsFragment extends Fragment {
                                     Map<String, Object> updates = new HashMap<>();
                                     updates.put("friends", friendIds);
 
+                                    List<String> finalFriendIds = friendIds;
                                     db.collection("users").document(currentUserId)
+                                            .update(updates)
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        currentFriendIds = new ArrayList<>(finalFriendIds);
+
+                                                        addCurrentUserToFriendsList(friendId);
+                                                    } else {
+                                                        Toast.makeText(getContext(), "Échec de l'ajout d'ami", Toast.LENGTH_SHORT).show();
+                                                    }
+                                                }
+                                            });
+                                } else {
+                                    Toast.makeText(getContext(), "Cet utilisateur est déjà votre ami", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }
+                    }
+                });
+    }
+
+    private void addCurrentUserToFriendsList(String friendId) {
+        db.collection("users").document(friendId).get()
+                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            DocumentSnapshot document = task.getResult();
+                            if (document.exists()) {
+                                List<String> friendIds = (List<String>) document.get("friends");
+
+                                if (friendIds == null) {
+                                    friendIds = new ArrayList<>();
+                                }
+
+                                if (!friendIds.contains(currentUserId)) {  // Vérification supplémentaire
+                                    friendIds.add(currentUserId);
+
+                                    Map<String, Object> updates = new HashMap<>();
+                                    updates.put("friends", friendIds);
+
+                                    db.collection("users").document(friendId)
                                             .update(updates)
                                             .addOnCompleteListener(new OnCompleteListener<Void>() {
                                                 @Override
@@ -252,12 +307,15 @@ public class FriendsFragment extends Fragment {
                                                         searchEditText.setText("");
                                                         searchResultsContainer.setVisibility(View.GONE);
                                                     } else {
-                                                        Toast.makeText(getContext(), "Échec de l'ajout d'ami", Toast.LENGTH_SHORT).show();
+                                                        Toast.makeText(getContext(), "Échec de l'ajout d'ami (relation inverse)", Toast.LENGTH_SHORT).show();
                                                     }
                                                 }
                                             });
                                 } else {
-                                    Toast.makeText(getContext(), "Cet utilisateur est déjà votre ami", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "Ami ajouté avec succès", Toast.LENGTH_SHORT).show();
+                                    loadFriendsList();
+                                    searchEditText.setText("");
+                                    searchResultsContainer.setVisibility(View.GONE);
                                 }
                             }
                         }
@@ -380,12 +438,17 @@ public class FriendsFragment extends Fragment {
                     profileImageView.setImageResource(R.drawable.profile_picture_placeholder);
                 }
 
-                addFriendButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        addFriend(user.getId());
-                    }
-                });
+                if (user.isAlreadyFriend()) {
+                    addFriendButton.setVisibility(View.GONE);
+                } else {
+                    addFriendButton.setVisibility(View.VISIBLE);
+                    addFriendButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            addFriend(user.getId());
+                        }
+                    });
+                }
             }
         }
     }
@@ -395,12 +458,18 @@ public class FriendsFragment extends Fragment {
         private String username;
         private int elo;
         private String profilePicture;
+        private boolean isAlreadyFriend;
 
         public UserModel(String id, String username, int elo, String profilePicture) {
+            this(id, username, elo, profilePicture, false);
+        }
+
+        public UserModel(String id, String username, int elo, String profilePicture, boolean isAlreadyFriend) {
             this.id = id;
             this.username = username;
             this.elo = elo;
             this.profilePicture = profilePicture;
+            this.isAlreadyFriend = isAlreadyFriend;
         }
 
         public String getId() {
@@ -417,6 +486,10 @@ public class FriendsFragment extends Fragment {
 
         public String getProfilePicture() {
             return profilePicture;
+        }
+
+        public boolean isAlreadyFriend() {
+            return isAlreadyFriend;
         }
     }
 }
