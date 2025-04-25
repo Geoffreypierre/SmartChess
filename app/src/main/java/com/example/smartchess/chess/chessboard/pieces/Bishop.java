@@ -1,11 +1,9 @@
 package com.example.smartchess.chess.chessboard.pieces;
 
-import android.graphics.Color;
-
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessUtils;
-import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +32,8 @@ public class Bishop extends Piece {
     }
 
 
-    public List<Move> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int[][] directions = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1} };
         for (int[] d : directions) {
             int row = fromRow;
@@ -47,12 +45,12 @@ public class Bishop extends Piece {
                     break;
                 if (board[row][col] == null) {
                     if (isValidMove(fromRow, fromCol, row, col, board)) {
-                        moves.add(new Move(row, col));
+                        moves.add(new Position(row, col));
                     }
                 } else {
                     if (board[row][col].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, row, col, board)) {
-                            moves.add(new Move(row, col));
+                            moves.add(new Position(row, col));
                         }
                     }
                     break;
@@ -62,8 +60,8 @@ public class Bishop extends Piece {
         return moves;
     }
 
-    public List<Move> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int[][] directions = { {-1, -1}, {-1, 1}, {1, -1}, {1, 1} };
         for (int[] d : directions) {
             int row = fromRow;
@@ -75,7 +73,7 @@ public class Bishop extends Piece {
                     break;
                 if (board[row][col] == null) {
                     if (isValidMove(fromRow, fromCol, row, col, board)) {
-                        Move move = new Move(row, col);
+                        Position move = new Position(row, col);
                         if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, move, enPassantSquare)) {
                             moves.add(move);
                         }
@@ -83,7 +81,7 @@ public class Bishop extends Piece {
                 } else {
                     if (board[row][col].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, row, col, board)) {
-                            Move move = new Move(row, col);
+                            Position move = new Position(row, col);
                             if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, move , enPassantSquare)) {
                                 moves.add(move);
                             }
@@ -103,6 +101,11 @@ public class Bishop extends Piece {
     @Override
     public Bishop clone() {
         return new Bishop(this.getColor());
+    }
+
+    @Override
+    public String toString() {
+        return "Bishop";
     }
 
 }

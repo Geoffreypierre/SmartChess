@@ -42,6 +42,9 @@
         <activity
             android:name=".play.PlayActivity"
             android:exported="false" />
+        <activity
+            android:name=".play.MatchmakingActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

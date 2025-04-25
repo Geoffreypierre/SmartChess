@@ -3,7 +3,7 @@ package com.example.smartchess.chess.chessboard.pieces;
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessUtils;
-import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +27,8 @@ public class Knight extends Piece {
         return color == Color.WHITE ? R.drawable.knight : R.drawable.knight_black;
     }
 
-    public List<Move> getAvailableMoves(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int[][] knightMoves = {
                 {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
                 { 1, -2}, { 1, 2}, { 2, -1}, { 2, 1}
@@ -39,7 +39,7 @@ public class Knight extends Piece {
             if (isInBounds(toRow, toCol, board)) {
                 if (board[toRow][toCol] == null || board[toRow][toCol].getColor() != this.getColor()) {
                     if (isValidMove(fromRow, fromCol, toRow, toCol, board)) {
-                        moves.add(new Move(toRow, toCol));
+                        moves.add(new Position(toRow, toCol));
                     }
                 }
             }
@@ -47,8 +47,8 @@ public class Knight extends Piece {
         return moves;
     }
 
-    public List<Move> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int[][] knightMoves = {
                 {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
                 { 1, -2}, { 1, 2}, { 2, -1}, { 2, 1}
@@ -59,7 +59,7 @@ public class Knight extends Piece {
             if (isInBounds(toRow, toCol, board)) {
                 if (board[toRow][toCol] == null || board[toRow][toCol].getColor() != this.getColor()) {
                     if (isValidMove(fromRow, fromCol, toRow, toCol, board)) {
-                        Move moveD = new Move(toRow, toCol);
+                        Position moveD = new Position(toRow, toCol);
                         if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                             moves.add(moveD);
                         }
@@ -79,5 +79,11 @@ public class Knight extends Piece {
     @Override
     public Knight clone() {
         return new Knight(this.color);
+    }
+
+
+    @Override
+    public String toString() {
+        return "Knight";
     }
 }

@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import com.example.smartchess.R;
+import com.example.smartchess.auth.UserSession;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.pieces.Piece;
@@ -39,6 +40,9 @@ public class ChessGameActivity extends AppCompatActivity {
 
     Dialog dialog;
 
+    String multi_game_id;
+    String multi_player_color;
+
     @SuppressLint("UseCompatLoadingForDrawables")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +64,17 @@ public class ChessGameActivity extends AppCompatActivity {
         if (gameModeString != null) {
             if (gameModeString.equals("local")) {
                 mode = new LocalGameMode();
-            } else {
-                mode = new MultiplayerGameMode();
+            } else if (gameModeString.equals("multiplayer")) {
+                multi_game_id = intent.getStringExtra("game_id");
+                multi_player_color = intent.getStringExtra("player_color");
+
+                mode = new MultiplayerGameMode(multi_game_id, multi_player_color);
+
+            }
+            else {
+                Toast.makeText(this, "Invalid game mode", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
             }
         } else {
             mode = new LocalGameMode();
@@ -112,6 +125,9 @@ public class ChessGameActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Toast.makeText(ChessGameActivity.this, "Fin de la partie", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
+                UserSession session = new UserSession(ChessGameActivity.this);
+                String userId = session.getUserId();
+                mode.onGameOver(userId + "perdu","Abandon");
                 finish();
             }
         });

@@ -4,7 +4,10 @@ package com.example.smartchess.chess.controller;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
+import com.example.smartchess.chess.chessboard.pieces.Piece;
 import com.example.smartchess.chess.gamemodes.GameMode;
+import com.example.smartchess.chess.gamemodes.MultiplayerGameMode;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
 
 public class ChessGameController {
@@ -25,6 +28,17 @@ public class ChessGameController {
         this.gameMode = mode;
         this.playerInfoViewWhite = playerInfoViewWhite;
         this.playerInfoViewBlack = playerInfoViewBlack;
+
+        this.chessGame.setGameOverCallback(new ChessGame.GameOverCallback() {
+            @Override
+            public void onGameOver(String winner, String description) {
+                gameMode.onGameOver(winner, description);
+            }
+        });
+
+        //init ; multi = écouter les coups joués
+
+        this.gameMode.initGame(this.chessGame, this.boardView);
     }
 
 
@@ -40,19 +54,12 @@ public class ChessGameController {
 
         } else {
             // Deuxième sélection : tenter de déplacer la pièce sélectionnée.
-            boolean moveOk = chessGame.movePiece(selectedRow, selectedCol, row, col);
-            if (moveOk) {
-                // Créer et transmettre le coup joué.
-                System.out.println("Move made: " + selectedRow + ", " + selectedCol + " to " + row + ", " + col);
-                Move move = new Move(row, col);
 
-                // Notifier le changement de tour.
-                gameMode.onTurnChanged(chessGame.isWhiteTurn(), chessGame, boardView, playerInfoViewWhite, playerInfoViewBlack);
-
-                gameMode.onMoveValidated(move, chessGame, boardView);
+                gameMode.beforeMovePiece(chessGame);
+                Move move = new Move(selectedRow, selectedCol, row, col,chessGame.getPiece(selectedRow,selectedCol).getColor().equals(Piece.Color.BLACK) ? "black" : "white", chessGame.getPiece(selectedRow, selectedCol).toString());
+                gameMode.validateMove(move, chessGame, boardView, playerInfoViewWhite, playerInfoViewBlack);
 
 
-            }
             // Réinitialisation de la sélection.
             selectedRow = -1;
             selectedCol = -1;

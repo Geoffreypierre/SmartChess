@@ -12,25 +12,54 @@ import com.example.smartchess.chess.chessboard.pieces.Rook;
 
 import java.util.List;
 
+
 public class ChessGame {
     public static final int BOARD_SIZE = 8;
     private Piece[][] board;
     private boolean whiteTurn;
 
+    public enum BoardOrientation {
+        WHITE,
+        BLACK
+    }
+
+    private BoardOrientation boardOrientation = BoardOrientation.WHITE;
+
+    public void setBoardOrientation(BoardOrientation orientation) {
+        this.boardOrientation = orientation;
+    }
+
+    public BoardOrientation getBoardOrientation() {
+        return boardOrientation;
+    }
+
     private OnPieceCapturedListener pieceCapturedListener;
+
+    public interface GameOverCallback {
+        void onGameOver(String winner, String description);
+    }
+
+    private GameOverCallback gameOverCallback;
+
+    public void setGameOverCallback(GameOverCallback callback) {
+        this.gameOverCallback = callback;
+    }
 
     public void setOnPieceCapturedListener(OnPieceCapturedListener listener) {
         this.pieceCapturedListener = listener;
     }
 
+    public void setWhiteTurn(boolean whiteTurn) {
+        this.whiteTurn = whiteTurn;
+    }
 
-    private Move enPassantSquare = null;
+    private Position enPassantSquare = null;
 
-    public Move getEnPassantSquare() {
+    public Position getEnPassantSquare() {
         return enPassantSquare;
     }
 
-    public void setEnPassantSquare(Move move) {
+    public void setEnPassantSquare(Position move) {
      
         enPassantSquare = move;
     }
@@ -86,26 +115,33 @@ public class ChessGame {
     }
 
     public boolean movePiece(int fromRow, int fromCol, int toRow, int toCol) {
+
+
+
         if (fromRow < 0 || fromRow >= BOARD_SIZE || fromCol < 0 || fromCol >= BOARD_SIZE ||
                 toRow < 0 || toRow >= BOARD_SIZE || toCol < 0 || toCol >= BOARD_SIZE) {
+            System.out.println("Invalid move: out of bounds");
             return false;
         }
         Piece piece = board[fromRow][fromCol];
         if (piece == null) return false;
         if ((piece.getColor() == Piece.Color.WHITE && !whiteTurn) ||
                 (piece.getColor() == Piece.Color.BLACK && whiteTurn)) {
+            System.out.println("Invalid move: not your turn");
             return false;
         }
         Piece target = board[toRow][toCol];
         // Interdire de capturer ses propres pièces
         if (target != null && target.getColor() == piece.getColor()) {
+            System.out.println("Invalid move: cannot capture your own piece");
             return false;
         }
 
 
-        List<Move> moves = piece.getAvailableMovesWithCheck(fromRow, fromCol, board, enPassantSquare);
-        Move proposedMove = new Move(toRow, toCol);
+        List<Position> moves = piece.getAvailableMovesWithCheck(fromRow, fromCol, board, enPassantSquare);
+        Position proposedMove = new Position(toRow, toCol);
         if (!moves.contains(proposedMove)) {
+            System.out.println("Invalid move: not a valid move for this piece");
             return false;
         }
 
@@ -168,9 +204,9 @@ public class ChessGame {
                 // En passant
                 System.out.println("En passant");
                 if (whiteTurn) { //CREATION D'UNE CASE EN PASSANT
-                    setEnPassantSquare(new Move(fromRow - 1, fromCol));
+                    setEnPassantSquare(new Position(fromRow - 1, fromCol));
                 } else {
-                    setEnPassantSquare(new Move(fromRow + 1, fromCol));
+                    setEnPassantSquare(new Position(fromRow + 1, fromCol));
                 }
 
             } else {
@@ -194,8 +230,6 @@ public class ChessGame {
             setEnPassantSquare(null);
         }
 
-        whiteTurn = !whiteTurn; // Changer le tour
-
         System.out.println("Piece moved !");
 
 
@@ -205,11 +239,24 @@ public class ChessGame {
         System.out.println(piece.getColor());
         if(!ChessUtils.CanAPieceMove(board, piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE, enPassantSquare)){
 
-            System.out.println("PAT OU CHECKMATE");
-            if (ChessUtils.isKingInCheck(board, piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE, enPassantSquare)) {
-                System.out.println("CHECKMATE");
-            } else {
-                System.out.println("PAT");
+            Piece.Color opponentColor = piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE;
+
+            if (!ChessUtils.CanAPieceMove(board, opponentColor, enPassantSquare)) {
+                System.out.println("PAT OU CHECKMATE");
+                if (ChessUtils.isKingInCheck(board, opponentColor, enPassantSquare)) {
+                    System.out.println("CHECKMATE");
+                    if (gameOverCallback != null) {
+                        gameOverCallback.onGameOver(
+                                piece.getColor() == Piece.Color.WHITE ? "White" : "Black",
+                                "Victoire par échec et mat"
+                        );
+                    }
+                } else {
+                    System.out.println("PAT");
+                    if (gameOverCallback != null) {
+                        gameOverCallback.onGameOver("Draw", "Pat");
+                    }
+                }
             }
         }
 

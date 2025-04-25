@@ -26,8 +26,14 @@ public class ChessBoardView extends View {
     private int selectedRow = -1;
     private int selectedCol = -1;
 
+    private ChessGame.BoardOrientation boardOrientation = ChessGame.BoardOrientation.WHITE;
 
     private ChessGameController controller;
+
+    public void setBoardOrientation(ChessGame.BoardOrientation orientation) {
+        this.boardOrientation = orientation;
+        invalidate(); // redessine le plateau
+    }
 
     public void setGameController(ChessGameController controller) {
         this.controller = controller;
@@ -74,7 +80,7 @@ public class ChessBoardView extends View {
         int boardWidth = cellSize * boardCols;
         int boardHeight = cellSize * boardRows;
 
-        Move enpassantSquare = chessGame.getEnPassantSquare();
+        Position enpassantSquare = chessGame.getEnPassantSquare();
 
         // Centrer le plateau dans la vue
         int boardLeft = (getWidth() - boardWidth) / 2;
@@ -84,13 +90,18 @@ public class ChessBoardView extends View {
         // Dessin du damier et affichage des pièces
         for (int row = 0; row < ChessGame.BOARD_SIZE; row++) {
             for (int col = 0; col < ChessGame.BOARD_SIZE; col++) {
-                boolean isLight = (row + col) % 2 == 0;
+
+                // Appliquer l'orientation du plateau
+                int drawRow = (boardOrientation == ChessGame.BoardOrientation.WHITE) ? row : 7 - row;
+                int drawCol = (boardOrientation == ChessGame.BoardOrientation.WHITE) ? col : 7 - col;
+
+                boolean isLight = (drawRow + drawCol) % 2 == 0;
                 Paint cellPaint = isLight ? lightPaint : darkPaint;
-                int left = col * cellSize;
-                int top = row * cellSize;
+                int left = drawCol * cellSize;
+                int top = drawRow * cellSize;
                 canvas.drawRect(left, top, left + cellSize, top + cellSize, cellPaint);
 
-                // Surligner la case sélectionnée
+                // Surlignage sélection
                 if (row == selectedRow && col == selectedCol) {
                     Paint highlightPaint = new Paint();
                     highlightPaint.setColor(Color.YELLOW);
@@ -99,50 +110,39 @@ public class ChessBoardView extends View {
                     canvas.drawRect(left, top, left + cellSize, top + cellSize, highlightPaint);
                 }
 
-                // Surligner les cases disponibles si une pièce est sélectionnée
+                // Coup possible
                 Piece selectedPiece = chessGame.getPiece(selectedRow, selectedCol);
                 if (selectedPiece != null) {
-                    // Récupérer les coups possibles pour la pièce sélectionnée
-                    List<Move> availableMoves = selectedPiece.getAvailableMovesWithCheck(selectedRow, selectedCol, chessGame.getBoard(),enpassantSquare);
+                    List<Position> availableMoves = selectedPiece.getAvailableMovesWithCheck(
+                            selectedRow, selectedCol, chessGame.getBoard(), chessGame.getEnPassantSquare()
+                    );
 
-                    // Préparer un Paint pour dessiner le surlignage (par exemple en jaune semi-transparent)
                     Paint highlightPaint = new Paint();
                     highlightPaint.setColor(Color.YELLOW);
                     highlightPaint.setAlpha(5);
 
-
-                    for (Move move : availableMoves) {
-                        int moveRow = move.getRow();
-                        int moveCol = move.getCol();
-                        int leftHighlight = boardLeft + moveCol * cellSize;
-                        int topHighlight = boardTop + moveRow * cellSize;
-                        // Dessiner un rectangle sur la case correspondante
+                    for (Position move : availableMoves) {
+                        int moveRow = (boardOrientation == ChessGame.BoardOrientation.WHITE) ? move.getRow() : 7 - move.getRow();
+                        int moveCol = (boardOrientation == ChessGame.BoardOrientation.WHITE) ? move.getCol() : 7 - move.getCol();
+                        int leftHighlight = moveCol * cellSize;
+                        int topHighlight = moveRow * cellSize;
                         canvas.drawRect(leftHighlight, topHighlight, leftHighlight + cellSize, topHighlight + cellSize, highlightPaint);
                     }
                 }
 
-
+                // Affichage de la pièce
                 Piece piece = chessGame.getPiece(row, col);
                 if (piece != null) {
                     int resId = piece.getImageResId();
                     Drawable drawable = AppCompatResources.getDrawable(getContext(), resId);
                     if (drawable != null) {
                         drawable.setBounds(left, top, left + cellSize, top + cellSize);
-
-                        //marche pas !!
-                        if (piece.getColor() == Piece.Color.WHITE) {
-                            //drawable.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-                        } else {
-                            //drawable.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
-                        }
-
                         drawable.draw(canvas);
                     }
                 }
-
-
             }
         }
+
     }
 
     @Override
@@ -150,6 +150,12 @@ public class ChessBoardView extends View {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             int col = (int) (event.getX() / cellSize);
             int row = (int) (event.getY() / cellSize);
+
+            if (boardOrientation == ChessGame.BoardOrientation.BLACK) {
+                row = 7 - row;
+                col = 7 - col;
+            }
+
             if (controller != null) {
                 setSelectedCol(col);
                 setSelectedRow(row);
@@ -159,6 +165,7 @@ public class ChessBoardView extends View {
         }
         return super.onTouchEvent(event);
     }
+
 
     public void setOnPieceCapturedListener(ChessGame.OnPieceCapturedListener listener) {
         chessGame.setOnPieceCapturedListener(listener);

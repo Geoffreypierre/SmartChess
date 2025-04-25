@@ -4,7 +4,7 @@ package com.example.smartchess.chess.chessboard.pieces;
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessUtils;
-import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,15 +46,15 @@ public class Pawn extends Piece {
         return color == Color.WHITE ? R.drawable.pawn : R.drawable.pawn_black;
     }
 
-    public List<Move> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int direction = (color == Color.WHITE) ? -1 : 1;
         int nextRow = fromRow + direction;
 
         // Déplacement vers l'avant si la case est libre
         if (isInBounds(nextRow, fromCol, board) && board[nextRow][fromCol] == null) {
             if (isValidMove(fromRow, fromCol, nextRow, fromCol, board)) {
-                moves.add(new Move(nextRow, fromCol));
+                moves.add(new Position(nextRow, fromCol));
             }
             // Double déplacement depuis la ligne initiale
             int initialRow = (color == Color.WHITE) ? board.length - 2 : 1;
@@ -62,7 +62,7 @@ public class Pawn extends Piece {
                 int twoStepsRow = fromRow + 2 * direction;
                 if (isInBounds(twoStepsRow, fromCol, board) && board[twoStepsRow][fromCol] == null) {
                     if (isValidMove(fromRow, fromCol, twoStepsRow, fromCol, board)) {
-                        moves.add(new Move(twoStepsRow, fromCol));
+                        moves.add(new Position(twoStepsRow, fromCol));
                     }
                 }
             }
@@ -74,15 +74,15 @@ public class Pawn extends Piece {
             if (isInBounds(nextRow, captureCol, board)) {
                 if (board[nextRow][captureCol] != null && board[nextRow][captureCol].getColor() != color) {
                     if (isValidMove(fromRow, fromCol, nextRow, captureCol, board)) {
-                        moves.add(new Move(nextRow, captureCol));
+                        moves.add(new Position(nextRow, captureCol));
                     }
                 }
                 // Prise en passant
                 else if (board[nextRow][captureCol] == null) {
                     // Vérifier si la case cible correspond à la case en passant enregistrée
-                    if (enPassantSquare != null && enPassantSquare.equals(new Move(nextRow, captureCol))) {
+                    if (enPassantSquare != null && enPassantSquare.equals(new Position(nextRow, captureCol))) {
                         // On crée un move en passant
-                        Move enPassantMove = new Move(nextRow, captureCol);
+                        Position enPassantMove = new Position(nextRow, captureCol);
                         moves.add(enPassantMove);
                     }
                 }
@@ -92,15 +92,15 @@ public class Pawn extends Piece {
         return moves;
     }
 
-    public List<Move> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int direction = (color == Color.WHITE) ? -1 : 1;
         int nextRow = fromRow + direction;
 
         // Déplacement vers l'avant si la case est libre
         if (isInBounds(nextRow, fromCol, board) && board[nextRow][fromCol] == null) {
             if (isValidMove(fromRow, fromCol, nextRow, fromCol, board)) {
-                Move moveD = new Move(nextRow, fromCol);
+                Position moveD = new Position(nextRow, fromCol);
                 if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                     moves.add(moveD);
                 }
@@ -111,7 +111,7 @@ public class Pawn extends Piece {
                 int twoStepsRow = fromRow + 2 * direction;
                 if (isInBounds(twoStepsRow, fromCol, board) && board[twoStepsRow][fromCol] == null) {
                     if (isValidMove(fromRow, fromCol, twoStepsRow, fromCol, board)) {
-                        Move moveD = new Move(twoStepsRow, fromCol);
+                        Position moveD = new Position(twoStepsRow, fromCol);
                         if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                             moves.add(moveD);
                         }
@@ -126,7 +126,7 @@ public class Pawn extends Piece {
             if (isInBounds(nextRow, captureCol, board)) {
                 if (board[nextRow][captureCol] != null && board[nextRow][captureCol].getColor() != color) {
                     if (isValidMove(fromRow, fromCol, nextRow, captureCol, board)) {
-                        Move moveD = new Move(nextRow, captureCol);
+                        Position moveD = new Position(nextRow, captureCol);
                         if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                             moves.add(moveD);
                         }
@@ -135,9 +135,9 @@ public class Pawn extends Piece {
                 // Prise en passant
                 else if (board[nextRow][captureCol] == null) {
                     // Vérifier si la case cible correspond à la case en passant enregistrée
-                    if (enPassantSquare != null && enPassantSquare.equals(new Move(nextRow, captureCol))) {
+                    if (enPassantSquare != null && enPassantSquare.equals(new Position(nextRow, captureCol))) {
                         // On crée un move en passant
-                        Move enPassantMove = new Move(nextRow, captureCol);
+                        Position enPassantMove = new Position(nextRow, captureCol);
                         moves.add(enPassantMove);
                     }
                 }
@@ -181,5 +181,10 @@ public class Pawn extends Piece {
     @Override
     public Pawn clone() {
         return new Pawn(this.color);
+    }
+
+    @Override
+    public String toString() {
+        return "Pawn";
     }
 }

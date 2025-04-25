@@ -4,7 +4,7 @@ package com.example.smartchess.chess.chessboard.pieces;
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessUtils;
-import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +30,8 @@ public class Rook extends Piece {
         return color == Color.WHITE ? R.drawable.rook : R.drawable.rook_black;
     }
 
-    public List<Move> getAvailableMoves(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int[][] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
         for (int[] d : directions) {
             int row = fromRow;
@@ -43,12 +43,12 @@ public class Rook extends Piece {
                     break;
                 if (board[row][col] == null) {
                     if (isValidMove(fromRow, fromCol, row, col, board)) {
-                        moves.add(new Move(row, col));
+                        moves.add(new Position(row, col));
                     }
                 } else {
                     if (board[row][col].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, row, col, board)) {
-                            moves.add(new Move(row, col));
+                            moves.add(new Position(row, col));
                         }
                     }
                     break;
@@ -58,8 +58,8 @@ public class Rook extends Piece {
         return moves;
     }
 
-    public List<Move> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         int[][] directions = { {-1, 0}, {1, 0}, {0, -1}, {0, 1} };
         for (int[] d : directions) {
             int row = fromRow;
@@ -71,7 +71,7 @@ public class Rook extends Piece {
                     break;
                 if (board[row][col] == null) {
                     if (isValidMove(fromRow, fromCol, row, col, board)) {
-                        Move moveD = new Move(row, col);
+                        Position moveD = new Position(row, col);
                         if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                             moves.add(moveD);
                         }
@@ -79,7 +79,7 @@ public class Rook extends Piece {
                 } else {
                     if (board[row][col].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, row, col, board)) {
-                            Move moveD = new Move(row, col);
+                            Position moveD = new Position(row, col);
                             if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                                 moves.add(moveD);
                             }
@@ -99,6 +99,11 @@ public class Rook extends Piece {
     @Override
     public Rook clone() {
         return new Rook(this.color);
+    }
+
+    @Override
+    public String toString() {
+        return "Rook";
     }
 
 

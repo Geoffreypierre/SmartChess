@@ -1,6 +1,7 @@
 [versions]
 agp = "8.9.1"
 firebaseAuth = "23.2.0"
+firebaseDatabase = "21.0.0"
 firebaseFirestoreVersion = "24.10.0"
 firebaseStorage = "21.0.1"
 glide = "4.16.0"
@@ -20,6 +21,7 @@ constraintlayoutVersion = "2.2.1"
 
 [libraries]
 firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
+firebase-database = { module = "com.google.firebase:firebase-database", version.ref = "firebaseDatabase" }
 firebase-firestore-v24100 = { module = "com.google.firebase:firebase-firestore", version.ref = "firebaseFirestoreVersion" }
 firebase-firestore-v2491 = { module = "com.google.firebase:firebase-firestore", version.ref = "googleFirebaseFirestore" }
 firebase-storage = { module = "com.google.firebase:firebase-storage", version.ref = "firebaseStorage" }

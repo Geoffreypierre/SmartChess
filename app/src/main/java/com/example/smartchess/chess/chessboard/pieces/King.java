@@ -3,7 +3,7 @@ package com.example.smartchess.chess.chessboard.pieces;
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessUtils;
-import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +28,8 @@ public class King extends Piece {
         return color == Color.WHITE ? R.drawable.king : R.drawable.king_black;
     }
 
-    public List<Move> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
 
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -43,7 +43,7 @@ public class King extends Piece {
 
                     if (board[toRow][toCol] == null || board[toRow][toCol].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, toRow, toCol, board)) {
-                            moves.add(new Move(toRow, toCol));
+                            moves.add(new Position(toRow, toCol));
                         }
                     }
                 }
@@ -53,8 +53,8 @@ public class King extends Piece {
         return moves;
     }
 
-    public List<Move> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
 
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
@@ -68,7 +68,7 @@ public class King extends Piece {
 
                     if (board[toRow][toCol] == null || board[toRow][toCol].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, toRow, toCol, board)) {
-                            Move move = new Move(toRow, toCol);
+                            Position move = new Position(toRow, toCol);
                             if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, move, enPassantSquare)) {
                                 moves.add(move);
                             }
@@ -91,7 +91,7 @@ public class King extends Piece {
                             && !ChessUtils.isSquareUnderAttack(board, fromRow, 5, this.getColor(), enPassantSquare)
                             && !ChessUtils.isSquareUnderAttack(board, fromRow, 6, this.getColor(), enPassantSquare);
                     if (safe) {
-                        moves.add(new Move(fromRow, 6));
+                        moves.add(new Position(fromRow, 6));
                     }
                 }
             }
@@ -103,7 +103,7 @@ public class King extends Piece {
                             && !ChessUtils.isSquareUnderAttack(board, fromRow, 3, this.getColor(), enPassantSquare)
                             && !ChessUtils.isSquareUnderAttack(board, fromRow, 2, this.getColor(), enPassantSquare);
                     if (safe) {
-                        moves.add(new Move(fromRow, 2));
+                        moves.add(new Position(fromRow, 2));
                     }
                 }
             }
@@ -120,6 +120,11 @@ public class King extends Piece {
     @Override
     public King clone() {
         return new King(this.color);
+    }
+
+    @Override
+    public String toString() {
+        return "King";
     }
 
 }

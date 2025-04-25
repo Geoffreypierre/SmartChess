@@ -3,7 +3,7 @@ package com.example.smartchess.chess.chessboard.pieces;
 
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.ChessUtils;
-import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +31,8 @@ public class Queen extends Piece {
         return color == Color.WHITE ? R.drawable.queen : R.drawable.queen_black;
     }
 
-    public List<Move> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMoves(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         // Combinaison des directions de la tour et du fou
         int[][] directions = {
                 {-1, 0}, {1, 0}, {0, -1}, {0, 1},
@@ -48,12 +48,12 @@ public class Queen extends Piece {
                     break;
                 if (board[row][col] == null) {
                     if (isValidMove(fromRow, fromCol, row, col, board)) {
-                        moves.add(new Move(row, col));
+                        moves.add(new Position(row, col));
                     }
                 } else {
                     if (board[row][col].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, row, col, board)) {
-                            moves.add(new Move(row, col));
+                            moves.add(new Position(row, col));
                         }
                     }
                     break;
@@ -63,8 +63,8 @@ public class Queen extends Piece {
         return moves;
     }
 
-    public List<Move> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board,Move enPassantSquare) {
-        List<Move> moves = new ArrayList<>();
+    public List<Position> getAvailableMovesWithCheck(int fromRow, int fromCol, Piece[][] board, Position enPassantSquare) {
+        List<Position> moves = new ArrayList<>();
         // Combinaison des directions de la tour et du fou
         int[][] directions = {
                 {-1, 0}, {1, 0}, {0, -1}, {0, 1},
@@ -80,7 +80,7 @@ public class Queen extends Piece {
                     break;
                 if (board[row][col] == null) {
                     if (isValidMove(fromRow, fromCol, row, col, board)) {
-                        Move moveD = new Move(row, col);
+                        Position moveD = new Position(row, col);
                         if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                             moves.add(moveD);
                         }
@@ -88,7 +88,7 @@ public class Queen extends Piece {
                 } else {
                     if (board[row][col].getColor() != this.getColor()) {
                         if (isValidMove(fromRow, fromCol, row, col, board)) {
-                            Move moveD = new Move(row, col);
+                            Position moveD = new Position(row, col);
                             if (ChessUtils.doesMoveResolveCheck(board, this.getColor(), fromRow, fromCol, moveD, enPassantSquare)) {
                                 moves.add(moveD);
                             }
@@ -108,5 +108,10 @@ public class Queen extends Piece {
     @Override
     public Queen clone() {
         return new Queen(this.color);
+    }
+
+    @Override
+    public String toString() {
+        return "Queen";
     }
 }
