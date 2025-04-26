@@ -21,11 +21,13 @@ import com.example.smartchess.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -39,6 +41,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
     private ImageView photoProfile, togglePassword;
     private Button btnInscrire;
     private TextView btnConnexion;
+    private LinearProgressIndicator progressIndicator;
     private boolean isPasswordVisible = false;
     private String niveauSelectionne;
     private Uri profileImageUri = null;
@@ -88,6 +91,8 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         togglePassword = findViewById(R.id.toggle_password);
         btnInscrire = findViewById(R.id.btn_inscrire);
         btnConnexion = findViewById(R.id.btn_connexion);
+        progressIndicator = findViewById(R.id.progress_indicator);
+        progressIndicator.setVisibility(View.GONE);
     }
 
     private void setupListeners() {
@@ -170,17 +175,14 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         String email = editAdresseMail.getText().toString().trim();
         String password = editMotDePasse.getText().toString().trim();
 
-        // Créer l'utilisateur avec Firebase Auth
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            // Inscription réussie
                             FirebaseUser user = mAuth.getCurrentUser();
                             saveUserInfo(user.getUid());
                         } else {
-                            // Échec de l'inscription
                             Toast.makeText(SecondInscriptionActivity.this,
                                     "Échec de l'inscription: " + task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
@@ -192,7 +194,6 @@ public class SecondInscriptionActivity extends AppCompatActivity {
     private void saveUserInfo(String userId) {
         String username = editNomUtilisateur.getText().toString().trim();
 
-        // Déterminer l'Elo initial en fonction du niveau
         int initialElo;
         switch (niveauSelectionne) {
             case "Intermédiaire":
@@ -214,26 +215,53 @@ public class SecondInscriptionActivity extends AppCompatActivity {
     }
 
     private void uploadProfileImageAndSaveUser(String userId, String username, int elo) {
-        StorageReference imageRef = storageRef.child("profile_images/" + userId + ".jpg");
+        // Simplifier la référence de stockage pour éviter des problèmes de chemin
+        StorageReference profileImagesRef = storage.getReference("profile_images");
+
+        // Générer un nom de fichier unique basé sur l'ID utilisateur
+        StorageReference imageRef = profileImagesRef.child(userId + ".jpg");
+
+        progressIndicator.setVisibility(View.VISIBLE);
+        btnInscrire.setEnabled(false);
 
         imageRef.putFile(profileImageUri)
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        progressIndicator.setVisibility(View.GONE);
+                        btnInscrire.setEnabled(true);
+
                         imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                             @Override
                             public void onSuccess(Uri downloadUrl) {
                                 saveUserToFirestore(userId, username, elo, downloadUrl.toString());
                             }
+                        }).addOnFailureListener(e -> {
+                            Toast.makeText(SecondInscriptionActivity.this,
+                                    "Impossible d'obtenir l'URL de l'image: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                            saveUserToFirestore(userId, username, elo, "");
                         });
                     }
                 })
                 .addOnFailureListener(e -> {
+                    progressIndicator.setVisibility(View.GONE);
+                    btnInscrire.setEnabled(true);
+
+                    // Message d'erreur plus détaillé pour le débogage
                     Toast.makeText(SecondInscriptionActivity.this,
                             "Échec du téléchargement de l'image: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
-                    // Sauvegarder quand même l'utilisateur sans image
-                    saveUserToFirestore(userId, username, elo, null);
+
+                    // Même en cas d'échec, on enregistre l'utilisateur sans image
+                    saveUserToFirestore(userId, username, elo, "");
+                })
+                .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onProgress(@NonNull UploadTask.TaskSnapshot taskSnapshot) {
+                        double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                        progressIndicator.setProgress((int) progress);
+                    }
                 });
     }
 
