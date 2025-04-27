@@ -5,43 +5,50 @@
     android:layout_height="match_parent"
     android:background="#1B1A25">
 
-    <TextView
-        android:id="@+id/txt_page_title"
+    <LinearLayout
+        android:id="@+id/title_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="Amis"
-        android:textColor="#FFFFFF"
-        android:textSize="40sp"
-        android:textStyle="bold"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/friends_icon" />
-
-    <ImageView
-        android:id="@+id/friends_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="20dp"
-        android:src="@drawable/bottom_bar_friends"
-        android:contentDescription="Icône amis"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/txt_page_title"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/txt_page_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amis"
+            android:textColor="#FFFFFF"
+            android:textSize="40sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp" />
+
+        <ImageView
+            android:id="@+id/friends_icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="20dp"
+            android:src="@drawable/tittle_friends"
+            android:contentDescription="Icône amis" />
+
+    </LinearLayout>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/search_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="36dp"
         android:layout_marginEnd="16dp"
         app:cardBackgroundColor="#2E2C3B"
         app:cardCornerRadius="20dp"
         app:cardElevation="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/txt_page_title">
+        app:layout_constraintTop_toBottomOf="@+id/title_container">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -74,13 +81,12 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/search_button"
+        android:background="@drawable/button_search_background"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@color/green"
+        android:layout_marginTop="30dp"
         android:text="Chercher"
         android:textColor="#FFFFFF"
-        app:cornerRadius="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/search_card" />
@@ -89,7 +95,7 @@
         android:id="@+id/txt_placeholder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Liste des amis à venir"
+        android:text="Ajoutez des amis et défiez-les !"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="parent"

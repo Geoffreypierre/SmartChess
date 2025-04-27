@@ -67,7 +67,6 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_inscription_second);
 
-        // Initialiser Firebase Auth
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
@@ -215,10 +214,8 @@ public class SecondInscriptionActivity extends AppCompatActivity {
     }
 
     private void uploadProfileImageAndSaveUser(String userId, String username, int elo) {
-        // Simplifier la référence de stockage pour éviter des problèmes de chemin
         StorageReference profileImagesRef = storage.getReference("profile_images");
 
-        // Générer un nom de fichier unique basé sur l'ID utilisateur
         StorageReference imageRef = profileImagesRef.child(userId + ".jpg");
 
         progressIndicator.setVisibility(View.VISIBLE);
@@ -248,12 +245,10 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                     progressIndicator.setVisibility(View.GONE);
                     btnInscrire.setEnabled(true);
 
-                    // Message d'erreur plus détaillé pour le débogage
                     Toast.makeText(SecondInscriptionActivity.this,
                             "Échec du téléchargement de l'image: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
 
-                    // Même en cas d'échec, on enregistre l'utilisateur sans image
                     saveUserToFirestore(userId, username, elo, "");
                 })
                 .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
@@ -280,7 +275,6 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                             "Inscription réussie !, Elo: " + elo,
                             Toast.LENGTH_LONG).show();
 
-                    // Sauvegarder les infos utilisateur dans UserSession
                     UserSession userSession = new UserSession(SecondInscriptionActivity.this);
                     userSession.createLoginSession(userId, username, elo, profilePicture);
 
