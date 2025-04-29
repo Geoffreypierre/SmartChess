@@ -13,7 +13,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.example.smartchess.MainActivity;
 import com.example.smartchess.R;
-import com.example.smartchess.play.FriendRequestModel;
+import com.example.smartchess.home.FriendRequestModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;

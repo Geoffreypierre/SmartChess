@@ -1,4 +1,4 @@
-package com.example.smartchess.play;
+package com.example.smartchess.home;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,7 +15,6 @@ import androidx.fragment.app.Fragment;
 import com.example.smartchess.R;
 import com.example.smartchess.auth.UserSession;
 import com.example.smartchess.matchmaking.Matchmaker;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;

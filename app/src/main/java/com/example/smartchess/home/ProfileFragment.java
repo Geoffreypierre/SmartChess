@@ -1,4 +1,4 @@
-package com.example.smartchess.play;
+package com.example.smartchess.home;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

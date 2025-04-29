@@ -18,7 +18,7 @@
         android:theme="@style/Theme.SmartChess"
         tools:targetApi="31">
         <activity
-            android:name=".play.ChessGameActivity"
+            android:name=".home.ChessGameActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
@@ -42,10 +42,10 @@
             android:name=".auth.ProfileActivity"
             android:exported="false" />
         <activity
-            android:name=".play.PlayActivity"
+            android:name=".home.PlayActivity"
             android:exported="false" />
         <activity
-            android:name=".play.MatchmakingActivity"
+            android:name=".home.MatchmakingActivity"
             android:exported="false" />
     </application>
 

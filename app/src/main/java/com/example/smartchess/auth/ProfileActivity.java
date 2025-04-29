@@ -5,7 +5,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.smartchess.play.PlayActivity;
+import com.example.smartchess.home.PlayActivity;
 
 public class ProfileActivity extends AppCompatActivity {
 

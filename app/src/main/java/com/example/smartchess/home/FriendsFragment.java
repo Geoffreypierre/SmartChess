@@ -1,4 +1,4 @@
-package com.example.smartchess.play;
+package com.example.smartchess.home;
 
 import android.app.Dialog;
 import android.os.Bundle;
@@ -23,21 +23,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.smartchess.R;
 import com.example.smartchess.auth.UserSession;
-import com.example.smartchess.play.FriendRequestModel;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class FriendsFragment extends Fragment {
 
