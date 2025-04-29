@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -24,6 +25,8 @@ import com.example.smartchess.chess.gamemodes.LocalGameMode;
 import com.example.smartchess.chess.gamemodes.MultiplayerGameMode;
 import com.example.smartchess.chess.playerinfos.ChessTimer;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
+
+import java.util.Arrays;
 
 public class ChessGameActivity extends AppCompatActivity {
 
@@ -128,6 +131,7 @@ public class ChessGameActivity extends AppCompatActivity {
                 UserSession session = new UserSession(ChessGameActivity.this);
                 String userId = session.getUserId();
                 mode.onGameOver(userId + "perdu","Abandon");
+                Log.e("ENDGAME", Arrays.deepToString(game.getBoard()));
                 finish();
             }
         });
