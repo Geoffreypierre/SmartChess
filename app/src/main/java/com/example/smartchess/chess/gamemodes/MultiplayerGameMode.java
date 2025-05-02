@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
+import com.example.smartchess.chess.chessboard.Position;
 import com.example.smartchess.chess.chessboard.pieces.Piece;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
 import com.google.firebase.database.ChildEventListener;
@@ -31,25 +32,40 @@ public class MultiplayerGameMode implements GameMode {
 
     @Override
     public void onMoveValidated(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
+
         System.out.println("Move validated: " + move.getToRow() + ", " + move.getToCol());
 
+
+        // Envoyer le coup au serveur
         gamesRef.child(gameId).child("moves").push().setValue(move)
                 .addOnSuccessListener(unused -> Log.d("Matchmaker", "Coup envoyé avec succès !"))
                 .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors de l'envoi du coup", e));
 
         view.invalidate();
-        onTurnChanged(playerColor.equals("white"), game, view, playerInfoViewWhite, playerInfoViewBlack);
+
+        // changer le tour
+        onTurnChanged(playerColor.equals("white"), game, view, null, null);
+
     }
 
     @Override
     public void onTurnChanged(boolean whiteTurn, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
+        // Changer le tour dans le serveur
         getCurrentTurn(turn -> {
+
+            // Changer le tour dans le jeu
             game.setWhiteTurn(!turn.equals("white"));
 
             gamesRef.child(gameId).child("turn").setValue(turn.equals("white") ? "black" : "white")
                     .addOnSuccessListener(unused -> Log.d("Matchmaker", "Tour changé avec succès !"))
                     .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors du changement de tour", e));
+
+
+
         });
+
+
+
 
         view.setSelectedCol(-1);
         view.setSelectedRow(-1);
@@ -65,25 +81,36 @@ public class MultiplayerGameMode implements GameMode {
 
     @Override
     public void beforeMovePiece(ChessGame game) {
+
+        //actualiser le tour en fonction des données serveur
         getCurrentTurn(turn -> {
             if (turn.equals("white")) {
+                System.out.println("C'est le tour des blancs");
                 game.setWhiteTurn(true);
             } else {
+                System.out.println("C'est le tour des noirs");
                 game.setWhiteTurn(false);
             }
         });
     }
 
+
     @Override
     public void initGame(ChessGame game, ChessBoardView view) {
+
+        //si je suis le joueur noir je dois tourner le plateau
         if(playerColor.equals("black")) {
             game.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
             view.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
         }
 
         startListeningForMoves(game, view);
+
     }
 
+    /**
+     * Vérifie si le coup est valide et l’appliquer.
+     */
     public void validateMove(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
         checkIfMyTurn(isMyTurn -> {
             if (!isMyTurn) {
@@ -91,15 +118,44 @@ public class MultiplayerGameMode implements GameMode {
                 return;
             }
 
+            //verifier si je bouge ma couleur
             if(!move.getColor().equals(playerColor)){
                 System.out.println("Ce n'est pas votre couleur !");
                 return;
             }
 
-            onMoveValidated(move, game, view, playerInfoViewWhite, playerInfoViewBlack);
+            boolean moveOk = game.canMovePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
+            if (moveOk) {
+                //appliquer animation
+
+                //animate
+                animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(),game.getPiece(move.getFromRow(), move.getFromCol()), view);
+                view.setAnimationEndCallback(() -> {
+
+                    boolean moveEffectueOk = game.movePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
+                    onMoveValidated(move, game, view, playerInfoViewWhite, playerInfoViewBlack);
+
+
+                });
+
+
+            } else {
+                System.out.println("Coup invalide !");
+            }
         });
     }
 
+    public void animateMove(int fromRow, int fromCol, int toRow, int toCol, Piece piece, ChessBoardView boardView) {
+
+        boardView.animateMove(fromRow,fromCol,toRow,toCol, piece);
+
+    }
+
+
+
+    /**
+     * Vérifie si c’est le tour du joueur et retourne le résultat dans un callback.
+     */
     public void checkIfMyTurn(OnTurnCheckListener listener) {
         gamesRef.child(gameId).child("turn").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -133,32 +189,39 @@ public class MultiplayerGameMode implements GameMode {
         });
     }
 
+
+    /**
+     * Écoute les nouveaux coups joués par l’adversaire et les applique.
+     */
     public void startListeningForMoves(ChessGame game, ChessBoardView view) {
         gamesRef.child(gameId).child("moves").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 System.out.println("Coup reçu");
+                System.out.println("Coup reçu : " + snapshot.getValue());
+                System.out.println("Nouveau coup reçu : " + snapshot.getValue(Move.class));
                 Move move = snapshot.getValue(Move.class);
                 if (move != null) {
-                    System.out.println("Coup reçu : " + move.getFromRow() + "," + move.getFromCol() + " -> " + move.getToRow() + "," + move.getToCol());
+                    System.out.println("COUP RECU 2");
 
-                    if(!playerColor.equals(move.getColor())){
-                        Piece pieceToMove = game.getPiece(move.getFromRow(), move.getFromCol());
-                        if (pieceToMove != null) {
-                            view.animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(), pieceToMove);
+                    if(!playerColor.equals(move.getColor())){ //si je ne suis pas celui qui a joué le coup
+                        System.out.println("COUP RECU 3");
 
-                            view.setAnimationEndCallback(new ChessBoardView.AnimationEndCallback() {
-                                @Override
-                                public void onAnimationEnd() {
-                                    boolean moveOk = game.movePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
+                        boolean moveOk = game.movePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
 
-                                    getCurrentTurn(turn -> {
-                                        game.setWhiteTurn(turn.equals("white"));
-                                    });
-                                }
-                            });
-                        }
+                        view.invalidate();
+                        // Changer le tour
+                        getCurrentTurn(turn -> {
+
+                            // Changer le tour dans le jeu
+                            game.setWhiteTurn(turn.equals("white"));
+
+                        });
+
+                        Log.d("Multiplayer", "Coup reçu et appliqué : " + move + " (OK: " + moveOk + ")");
                     }
+
+
                 }
             }
 
@@ -171,10 +234,12 @@ public class MultiplayerGameMode implements GameMode {
         });
     }
 
+    /**
+     * Interface fonctionnelle pour vérifier le tour.
+     */
     public interface OnTurnCheckListener {
         void onCheck(boolean isMyTurn);
     }
-
     public interface OnCurrentTurnListener {
         void onResult(String currentTurn);
     }

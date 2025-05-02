@@ -114,6 +114,37 @@ public class ChessGame {
         return null;
     }
 
+    public boolean canMovePiece(int fromRow,int fromCol,int toRow,int toCol){
+        if (fromRow < 0 || fromRow >= BOARD_SIZE || fromCol < 0 || fromCol >= BOARD_SIZE ||
+                toRow < 0 || toRow >= BOARD_SIZE || toCol < 0 || toCol >= BOARD_SIZE) {
+            System.out.println("Invalid move: out of bounds");
+            return false;
+        }
+        Piece piece = board[fromRow][fromCol];
+        if (piece == null) return false;
+        if ((piece.getColor() == Piece.Color.WHITE && !whiteTurn) ||
+                (piece.getColor() == Piece.Color.BLACK && whiteTurn)) {
+            System.out.println("Invalid move: not your turn");
+            return false;
+        }
+        Piece target = board[toRow][toCol];
+        // Interdire de capturer ses propres pièces
+        if (target != null && target.getColor() == piece.getColor()) {
+            System.out.println("Invalid move: cannot capture your own piece");
+            return false;
+        }
+
+
+        List<Position> moves = piece.getAvailableMovesWithCheck(fromRow, fromCol, board, enPassantSquare);
+        Position proposedMove = new Position(toRow, toCol);
+        if (!moves.contains(proposedMove)) {
+            System.out.println("Invalid move: not a valid move for this piece");
+            return false;
+        }
+
+        return true;
+    }
+
     public boolean movePiece(int fromRow, int fromCol, int toRow, int toCol) {
 
 

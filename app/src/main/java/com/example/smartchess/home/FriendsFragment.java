@@ -380,7 +380,7 @@ public class FriendsFragment extends Fragment {
                 .addOnSuccessListener(aVoid -> {
                     if (response.equals("accepted")) {
                         // Ajouter les deux utilisateurs comme amis mutuels
-                        addAsFriends(request.getSenderId(), currentUserId);
+                            addAsFriends(request.getSenderId(), currentUserId);
                     } else {
                         Toast.makeText(getContext(), "Demande refusée", Toast.LENGTH_SHORT).show();
                     }
