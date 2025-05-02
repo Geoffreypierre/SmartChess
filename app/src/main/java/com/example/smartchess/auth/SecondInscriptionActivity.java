@@ -45,6 +45,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
     private boolean isPasswordVisible = false;
     private String niveauSelectionne;
     private Uri profileImageUri = null;
+    private boolean isRegistrationInProgress = false;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -112,7 +113,8 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         btnInscrire.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validateForm()) {
+                if (validateForm() && !isRegistrationInProgress) {
+                    setRegistrationInProgress(true);
                     registerUser();
                 }
             }
@@ -125,6 +127,19 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    private void setRegistrationInProgress(boolean inProgress) {
+        isRegistrationInProgress = inProgress;
+        btnInscrire.setEnabled(!inProgress);
+        progressIndicator.setVisibility(inProgress ? View.VISIBLE : View.GONE);
+
+        // Modifier l'apparence du bouton pour indiquer visuellement qu'il est désactivé
+        if (inProgress) {
+            btnInscrire.setAlpha(0.5f);
+        } else {
+            btnInscrire.setAlpha(1.0f);
+        }
     }
 
     private boolean validateForm() {
@@ -182,6 +197,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                             FirebaseUser user = mAuth.getCurrentUser();
                             saveUserInfo(user.getUid());
                         } else {
+                            setRegistrationInProgress(false);
                             Toast.makeText(SecondInscriptionActivity.this,
                                     "Échec de l'inscription: " + task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
@@ -219,15 +235,11 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         StorageReference imageRef = profileImagesRef.child(userId + ".jpg");
 
         progressIndicator.setVisibility(View.VISIBLE);
-        btnInscrire.setEnabled(false);
 
         imageRef.putFile(profileImageUri)
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        progressIndicator.setVisibility(View.GONE);
-                        btnInscrire.setEnabled(true);
-
                         imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                             @Override
                             public void onSuccess(Uri downloadUrl) {
@@ -242,13 +254,10 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> {
-                    progressIndicator.setVisibility(View.GONE);
-                    btnInscrire.setEnabled(true);
-
+                    setRegistrationInProgress(false);
                     Toast.makeText(SecondInscriptionActivity.this,
                             "Échec du téléchargement de l'image: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
-
                     saveUserToFirestore(userId, username, elo, "");
                 })
                 .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
@@ -271,6 +280,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
         db.collection("users").document(userId)
                 .set(user)
                 .addOnSuccessListener(aVoid -> {
+                    setRegistrationInProgress(false);
                     Toast.makeText(SecondInscriptionActivity.this,
                             "Inscription réussie !, Elo: " + elo,
                             Toast.LENGTH_LONG).show();
@@ -284,6 +294,7 @@ public class SecondInscriptionActivity extends AppCompatActivity {
                     finish();
                 })
                 .addOnFailureListener(e -> {
+                    setRegistrationInProgress(false);
                     Toast.makeText(SecondInscriptionActivity.this,
                             "Échec de l'enregistrement des informations: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
