@@ -25,7 +25,9 @@ public class HistoriquePartieService {
                 .add(partie)
                 .addOnSuccessListener(docRef -> {
                     String gameId = docRef.getId();
+
                     partie.setId(gameId);
+
                     lierPartieAuxJoueurs(partie, onSuccess, onFailure);
                 })
                 .addOnFailureListener(onFailure);

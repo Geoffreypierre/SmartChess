@@ -36,7 +36,7 @@ public class ChessGame {
     private OnPieceCapturedListener pieceCapturedListener;
 
     public interface GameOverCallback {
-        void onGameOver(String winner, String description);
+        void onGameOver(String winner,String loser, String description);
     }
 
     private GameOverCallback gameOverCallback;
@@ -145,27 +145,35 @@ public class ChessGame {
         return true;
     }
 
-    public boolean movePiece(int fromRow, int fromCol, int toRow, int toCol) {
+    public Move movePiece(Move move) {
 
+        int fromRow = move.getFromRow();
+        int fromCol = move.getFromCol();
+        int toRow = move.getToRow();
+        int toCol = move.getToCol();
+        String color = move.getColor();
+        String pieceType = move.getPieceType();
+
+        Move finalMove = new Move(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(), move.getColor(), move.getPieceType());
 
 
         if (fromRow < 0 || fromRow >= BOARD_SIZE || fromCol < 0 || fromCol >= BOARD_SIZE ||
                 toRow < 0 || toRow >= BOARD_SIZE || toCol < 0 || toCol >= BOARD_SIZE) {
             System.out.println("Invalid move: out of bounds");
-            return false;
+            return null;
         }
         Piece piece = board[fromRow][fromCol];
-        if (piece == null) return false;
+        if (piece == null) return null;
         if ((piece.getColor() == Piece.Color.WHITE && !whiteTurn) ||
                 (piece.getColor() == Piece.Color.BLACK && whiteTurn)) {
             System.out.println("Invalid move: not your turn");
-            return false;
+            return null;
         }
         Piece target = board[toRow][toCol];
         // Interdire de capturer ses propres pièces
         if (target != null && target.getColor() == piece.getColor()) {
             System.out.println("Invalid move: cannot capture your own piece");
-            return false;
+            return null;
         }
 
 
@@ -173,7 +181,7 @@ public class ChessGame {
         Position proposedMove = new Position(toRow, toCol);
         if (!moves.contains(proposedMove)) {
             System.out.println("Invalid move: not a valid move for this piece");
-            return false;
+            return null;
         }
 
 
@@ -181,6 +189,7 @@ public class ChessGame {
         //Si c'est une capture d'abord on appelle takePiece avant de déplacer mon pion sur la case
         if (target != null) {
             takePiece(toRow, toCol, whiteTurn);
+            finalMove.setCapture(true);
         }
         // Déplacer la pièce
         board[toRow][toCol] = piece;
@@ -200,6 +209,7 @@ public class ChessGame {
                     if (rook != null) {
                         rook.setMoved(true);
                     }
+                    finalMove.setCastling(true);
                 } else {
                     // Grand roque : la tour part de la colonne 0 et se place en colonne 3
                     Piece rook = board[toRow][0];
@@ -208,6 +218,7 @@ public class ChessGame {
                     if (rook != null) {
                         rook.setMoved(true);
                     }
+                    finalMove.setCastling(true);
                 }
             }
         }
@@ -254,6 +265,8 @@ public class ChessGame {
 
                 Piece promotedPiece = pawn.promote("queen");
                 board[toRow][toCol] = promotedPiece;
+
+                finalMove.setPromotion("queen");
             }
         }
         else {
@@ -273,25 +286,26 @@ public class ChessGame {
             Piece.Color opponentColor = piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE;
 
             if (!ChessUtils.CanAPieceMove(board, opponentColor, enPassantSquare)) {
-                System.out.println("PAT OU CHECKMATE");
                 if (ChessUtils.isKingInCheck(board, opponentColor, enPassantSquare)) {
                     System.out.println("CHECKMATE");
+                    finalMove.setCheckmate(true);
                     if (gameOverCallback != null) {
                         gameOverCallback.onGameOver(
                                 piece.getColor() == Piece.Color.WHITE ? "White" : "Black",
+                                null,
                                 "Victoire par échec et mat"
                         );
                     }
                 } else {
                     System.out.println("PAT");
                     if (gameOverCallback != null) {
-                        gameOverCallback.onGameOver("Draw", "Pat");
+                        gameOverCallback.onGameOver(null,null,"Draw");
                     }
                 }
             }
         }
 
-        return true;
+        return finalMove;
     }
 
 

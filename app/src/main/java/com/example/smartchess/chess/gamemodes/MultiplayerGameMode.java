@@ -10,13 +10,19 @@ import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
 import com.example.smartchess.chess.chessboard.Position;
 import com.example.smartchess.chess.chessboard.pieces.Piece;
+import com.example.smartchess.chess.historique.HistoriquePartie;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
+import com.example.smartchess.services.HistoriquePartieService;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class MultiplayerGameMode implements GameMode {
 
@@ -72,12 +78,136 @@ public class MultiplayerGameMode implements GameMode {
     }
 
     @Override
-    public void onGameOver(String winner, String description) {
-        System.out.println("Game over: " + winner + " wins! " + description);
-        gamesRef.child(gameId).removeValue()
-                .addOnSuccessListener(unused -> Log.d("Matchmaker", "Partie terminée !"))
-                .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors de la suppression de la partie", e));
+    public void onGameOver(String winner,String loser, String description) {
+
+
+        gamesRef.child(gameId).get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                String playerWhite = snapshot.child("playerWhite").getValue(String.class);
+                String playerBlack = snapshot.child("playerBlack").getValue(String.class);
+
+                DataSnapshot movesSnapshot = snapshot.child("moves");
+                List<String> movesList = new ArrayList<>();
+
+                for (DataSnapshot moveSnap : movesSnapshot.getChildren()) {
+                    Move move = moveSnap.getValue(Move.class);
+                    if (move != null) {
+                        String notation = convertMoveToNotation(move);
+                        movesList.add(notation);
+                    }
+                }
+                HistoriquePartie partie = new HistoriquePartie();
+                partie.setPlayer1Id(playerWhite);
+                partie.setPlayer2Id(playerBlack);
+                partie.setMoves(movesList);
+
+                if (winner != null && winner.equals("White")){
+                    partie.setWinnerId(playerWhite);
+                }
+                else if ( winner != null && winner.equals("Black")){
+                    partie.setWinnerId(playerBlack);
+
+                }
+                else{
+                    if(winner != null){
+                        if (winner.equals(playerWhite)){
+                            partie.setWinnerId(playerWhite);
+                        } else {
+                            partie.setWinnerId(playerBlack);
+
+                        }
+                    }
+                    else if (loser != null){
+                        if (loser.equals(playerWhite)){
+                            partie.setWinnerId(playerBlack);
+                        } else {
+                            partie.setWinnerId(playerWhite);
+                        }
+                    }
+                    else{
+                        partie.setWinnerId(null);
+
+                    }
+                }
+
+
+                partie.setResult(description);
+                partie.setTimestamp(new Date());
+                partie.setDuration(120);
+
+
+                new HistoriquePartieService().ajouterPartie(partie, unused -> {
+                    Log.d("Historique", "Partie enregistrée avec succès");
+                    gamesRef.child(gameId).removeValue()
+                            .addOnSuccessListener(unused2 -> Log.d("Matchmaker", "Partie supprimée"))
+                            .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur suppression", e));
+                }, e -> Log.e("Historique", "Erreur enregistrement historique", e));
+            }
+        }).addOnFailureListener(e -> Log.e("GameOver", "Erreur récupération partie", e));
+
     }
+
+
+    private String convertMoveToNotation(Move move) {
+        // Gestion du roque
+        if (move.isCastling()) {
+            if (move.getToCol() == 6) return "O-O";     // Petit roque
+            if (move.getToCol() == 2) return "O-O-O";   // Grand roque
+        }
+
+        StringBuilder notation = new StringBuilder();
+
+        String pieceType = move.getPieceType();
+        String promotion = move.getPromotion();
+
+        char toFile = (char) ('a' + move.getToCol());
+        int toRank = 8 - move.getToRow();
+        String toSquare = toFile + String.valueOf(toRank);
+
+        // Pièce : on met son symbole (rien pour les pions)
+        if (!"Pawn".equals(pieceType)) {
+            notation.append(getPieceLetter(pieceType));
+        }
+
+        // Capture
+        if (move.isCapture()) {
+            if ("Pawn".equals(pieceType)) {
+                char fromFile = (char) ('a' + move.getFromCol());
+                notation.append(fromFile);
+            }
+            notation.append("x");
+        }
+
+        // Case d'arrivée
+        notation.append(toSquare);
+
+        // Promotion
+        if (promotion != null && !promotion.isEmpty()) {
+            notation.append("=").append(getPieceLetter(promotion));
+        }
+
+        // Échec / Mat
+        if (move.isCheckmate()) {
+            notation.append("#");
+        } else if (move.isCheck()) {
+            notation.append("+");
+        }
+
+        return notation.toString();
+    }
+
+    private String getPieceLetter(String pieceType) {
+        switch (pieceType) {
+            case "Knight": return "N";
+            case "Bishop": return "B";
+            case "Rook":   return "R";
+            case "Queen":  return "Q";
+            case "King":   return "K";
+            default:       return ""; // Pawn
+        }
+    }
+
+
 
     @Override
     public void beforeMovePiece(ChessGame game) {
@@ -132,8 +262,8 @@ public class MultiplayerGameMode implements GameMode {
                 animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(),game.getPiece(move.getFromRow(), move.getFromCol()), view);
                 view.setAnimationEndCallback(() -> {
 
-                    boolean moveEffectueOk = game.movePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
-                    onMoveValidated(move, game, view, playerInfoViewWhite, playerInfoViewBlack);
+                    Move finalMove = game.movePiece(move);
+                    onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
 
 
                 });
@@ -207,7 +337,7 @@ public class MultiplayerGameMode implements GameMode {
                     if(!playerColor.equals(move.getColor())){ //si je ne suis pas celui qui a joué le coup
                         System.out.println("COUP RECU 3");
 
-                        boolean moveOk = game.movePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
+                        Move finalMove = game.movePiece(move);
 
                         view.invalidate();
                         // Changer le tour
@@ -218,7 +348,6 @@ public class MultiplayerGameMode implements GameMode {
 
                         });
 
-                        Log.d("Multiplayer", "Coup reçu et appliqué : " + move + " (OK: " + moveOk + ")");
                     }
 
 

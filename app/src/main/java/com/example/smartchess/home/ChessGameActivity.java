@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -25,6 +26,9 @@ import com.example.smartchess.chess.gamemodes.LocalGameMode;
 import com.example.smartchess.chess.gamemodes.MultiplayerGameMode;
 import com.example.smartchess.chess.playerinfos.ChessTimer;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Arrays;
 
@@ -32,7 +36,8 @@ public class ChessGameActivity extends AppCompatActivity {
 
     PlayerInfoView playerInfoViewWhite;
     PlayerInfoView playerInfoViewBlack;
-
+    String playerWhiteId;
+    String playerBlackId;
     ChessBoardView chessBoardView;
 
     ChessGame game;
@@ -61,17 +66,35 @@ public class ChessGameActivity extends AppCompatActivity {
         quitBtn = findViewById(R.id.quit_button);
 
         game = new ChessGame();
+        playerInfoViewWhite.setPseudo("Joueur 1");
+        playerInfoViewWhite.setElo(1500);
+        playerInfoViewBlack.setPseudo("Joueur 2");
+        playerInfoViewBlack.setElo(1500);
+
 
         Intent intent = getIntent();
         String gameModeString = intent.getStringExtra("game_mode");
         if (gameModeString != null) {
             if (gameModeString.equals("local")) {
                 mode = new LocalGameMode();
+
             } else if (gameModeString.equals("multiplayer")) {
                 multi_game_id = intent.getStringExtra("game_id");
                 multi_player_color = intent.getStringExtra("player_color");
+                playerWhiteId = intent.getStringExtra("playerWhiteId");
+                playerBlackId = intent.getStringExtra("playerBlackId");
 
                 mode = new MultiplayerGameMode(multi_game_id, multi_player_color);
+
+                if (multi_player_color.equals("white"))
+                {
+                    loadPlayerInfo(playerBlackId, true);
+                    loadPlayerInfo(playerWhiteId, false);
+                }
+                else{
+                    loadPlayerInfo(playerWhiteId, true);
+                    loadPlayerInfo(playerBlackId, false);
+                }
 
             }
             else {
@@ -84,13 +107,10 @@ public class ChessGameActivity extends AppCompatActivity {
         }
 
         // Set up the player info views
-        playerInfoViewWhite.setPseudo("Player 1");
-        playerInfoViewWhite.setElo(1500);
         ChessTimer timerWhite = new ChessTimer(1*60*1000,1000);
         playerInfoViewWhite.setTimer(timerWhite);
 
-        playerInfoViewBlack.setPseudo("Player 2");
-        playerInfoViewBlack.setElo(2700);
+
         ChessTimer timerBlack = new ChessTimer(1*60*1000,1000);
         playerInfoViewBlack.setTimer(timerBlack);
 
@@ -130,7 +150,7 @@ public class ChessGameActivity extends AppCompatActivity {
                 dialog.dismiss();
                 UserSession session = new UserSession(ChessGameActivity.this);
                 String userId = session.getUserId();
-                mode.onGameOver(userId + "perdu","Abandon");
+                mode.onGameOver(null,userId,"Abandon");
                 Log.e("ENDGAME", Arrays.deepToString(game.getBoard()));
                 finish();
             }
@@ -152,4 +172,53 @@ public class ChessGameActivity extends AppCompatActivity {
 
 
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mode instanceof MultiplayerGameMode) {
+            UserSession session = new UserSession(this);
+            String userId = session.getUserId();
+
+            Log.w("ChessGame", "App fermée ou quittée sans fin de partie → abandon");
+            mode.onGameOver(null, userId, "Abandon");
+        }
+
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        dialog.show();
+    }
+
+    private void loadPlayerInfo(String userId, boolean isWhite) {
+        FirebaseFirestore.getInstance().collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String pseudo = documentSnapshot.getString("username");
+                        Long eloLong = documentSnapshot.getLong("elo");
+                        String imageUrl = documentSnapshot.getString("profilePicture");
+                        int elo = eloLong != null ? eloLong.intValue() : 1500;
+
+                        if (isWhite) {
+                            playerInfoViewWhite.setPseudo(pseudo);
+                            playerInfoViewWhite.setElo(elo);
+                            playerInfoViewWhite.setProfileImage(imageUrl);
+
+                        } else {
+                            playerInfoViewBlack.setPseudo(pseudo);
+                            playerInfoViewBlack.setElo(elo);
+                            playerInfoViewBlack.setProfileImage(imageUrl);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("Firestore", "Erreur chargement user " + userId, e));
+    }
+
+
+
+
 }

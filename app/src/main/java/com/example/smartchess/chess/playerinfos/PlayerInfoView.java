@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 
+import com.bumptech.glide.Glide;
 import com.example.smartchess.R;
 import com.example.smartchess.chess.chessboard.pieces.Piece;
 
@@ -116,6 +117,17 @@ public class PlayerInfoView extends LinearLayout {
     public void pauseTimer() {
         if (chessTimer != null) chessTimer.pause();
     }
+
+    public void setProfileImage(String imageUrl) {
+
+        Glide.with(getContext())
+                .load(imageUrl)
+                .placeholder(R.drawable.profile_picture_placeholder) // image par défaut pendant le chargement
+                .error(R.drawable.profile_picture_placeholder)         // image en cas d’erreur
+                .circleCrop()                           // pour un affichage circulaire si tu veux
+                .into(profileImageView);
+    }
+
 
 
 }

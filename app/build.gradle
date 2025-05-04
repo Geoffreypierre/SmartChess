@@ -50,4 +50,5 @@ dependencies {
     implementation libs.picasso
     implementation libs.play.services.auth
     implementation libs.glide
+
 }

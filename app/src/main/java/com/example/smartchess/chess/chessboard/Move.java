@@ -8,8 +8,31 @@ public class Move {
     private String color;
     private String pieceType;
 
-    //Constructeur sans argument requis par Firebase
+    // Champs ajoutés pour une notation complète :
+    private boolean isCapture = false;
+    private boolean isCheck = false;
+    private boolean isCheckmate = false;
+    private String promotion = null; // Pour la promotion d'un pion
+    private boolean isCastling = false;
+
+    // Obligatoire pour Firebase
     public Move() {
+    }
+
+    public Move(int fromRow, int fromCol, int toRow, int toCol, String color, String pieceType,
+                boolean isCapture, boolean isCheck, boolean isCheckmate,
+                String promotion, boolean isCastling) {
+        this.fromRow = fromRow;
+        this.fromCol = fromCol;
+        this.toRow = toRow;
+        this.toCol = toCol;
+        this.color = color;
+        this.pieceType = pieceType;
+        this.isCapture = isCapture;
+        this.isCheck = isCheck;
+        this.isCheckmate = isCheckmate;
+        this.promotion = promotion;
+        this.isCastling = isCastling;
     }
 
     public Move(int fromRow, int fromCol, int toRow, int toCol, String color, String pieceType) {
@@ -19,8 +42,8 @@ public class Move {
         this.toCol = toCol;
         this.color = color;
         this.pieceType = pieceType;
-    }
 
+    }
     public int getFromRow() {
         return fromRow;
     }
@@ -67,6 +90,46 @@ public class Move {
 
     public void setPieceType(String pieceType) {
         this.pieceType = pieceType;
+    }
+
+    public boolean isCapture() {
+        return isCapture;
+    }
+
+    public void setCapture(boolean capture) {
+        isCapture = capture;
+    }
+
+    public boolean isCheck() {
+        return isCheck;
+    }
+
+    public void setCheck(boolean check) {
+        isCheck = check;
+    }
+
+    public boolean isCheckmate() {
+        return isCheckmate;
+    }
+
+    public void setCheckmate(boolean checkmate) {
+        isCheckmate = checkmate;
+    }
+
+    public String getPromotion() {
+        return promotion;
+    }
+
+    public void setPromotion(String promotion) {
+        this.promotion = promotion;
+    }
+
+    public boolean isCastling() {
+        return isCastling;
+    }
+
+    public void setCastling(boolean castling) {
+        isCastling = castling;
     }
 
     @Override

@@ -107,12 +107,14 @@ public class SecondPlayFragment extends Fragment {
 
                                 // PARTIE LANCEE
                                 System.out.println("PARTIE TROUVEE " + gameId);
-                                Intent intent = new Intent(getActivity(), ChessGameActivity.class);
-                                intent.putExtra("game_mode", "multiplayer");
-                                intent.putExtra("game_id", gameId);
-                                intent.putExtra("player_color", userId.equals(white) ? "white" : "black");
 
-                                startActivity(intent);
+                                //quitter l'écran de matchmaking qui s'est ouvert par dessus
+
+                                // Ferme MatchmakingActivity si elle est active
+                                if (getActivity() instanceof MatchmakingActivity) {
+                                    getActivity().finish();
+                                }
+
                             }
                         }
 

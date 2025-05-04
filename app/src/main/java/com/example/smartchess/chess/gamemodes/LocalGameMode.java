@@ -43,8 +43,8 @@ public class LocalGameMode implements GameMode {
     }
 
     public void validateMove(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
-        boolean moveOk = game.movePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
-        if (moveOk) {
+        Move finalMove = game.movePiece(move);
+        if (finalMove != null) {
             onMoveValidated(move, game, view, playerInfoViewWhite, playerInfoViewBlack);
             System.out.println("Move validated: " + move.getToRow() + ", " + move.getToCol());
 
@@ -54,7 +54,7 @@ public class LocalGameMode implements GameMode {
     }
 
     @Override
-    public void onGameOver(String winner, String description) {
+    public void onGameOver(String winner,String loser, String description) {
 
     }
 

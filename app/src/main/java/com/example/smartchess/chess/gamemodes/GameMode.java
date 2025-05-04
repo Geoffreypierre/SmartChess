@@ -17,7 +17,7 @@ public interface GameMode {
 
     void onTurnChanged(boolean whiteTurn, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack);
 
-    void onGameOver(String winner, String description);
+    void onGameOver(String winner,String loser, String description);
 
     void beforeMovePiece(ChessGame game);
 }

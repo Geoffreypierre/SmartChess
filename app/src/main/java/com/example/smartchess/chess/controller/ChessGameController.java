@@ -1,7 +1,7 @@
 package com.example.smartchess.chess.controller;
 
 
-import com.example.smartchess.chess.animation.ChessAnimationHandler;
+
 import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
@@ -32,8 +32,8 @@ public class ChessGameController {
 
         this.chessGame.setGameOverCallback(new ChessGame.GameOverCallback() {
             @Override
-            public void onGameOver(String winner, String description) {
-                gameMode.onGameOver(winner, description);
+            public void onGameOver(String winner,String loser, String description) {
+                gameMode.onGameOver(winner,loser, description);
             }
         });
 
@@ -80,20 +80,5 @@ public class ChessGameController {
         return chessGame;
     }
 
-    public void handleAnimation(
-            int fromRow,
-            int fromCol,
-            int toRow,
-            int toCol,
 
-            Piece pieceToMove){
-        ChessAnimationHandler.handleMoveAnimation(
-                boardView,
-                fromRow,
-                fromCol,
-                toRow,
-                toCol,
-                pieceToMove
-        );
-    }
 }
