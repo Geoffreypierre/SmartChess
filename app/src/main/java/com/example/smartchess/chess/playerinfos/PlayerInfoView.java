@@ -70,6 +70,10 @@ public class PlayerInfoView extends LinearLayout {
         pseudoTextView.setText(pseudo);
     }
 
+    public String getPseudo() {
+        return pseudoTextView.getText().toString();
+    }
+
     public void setElo(int elo) {
         eloTextView.setText(String.valueOf(elo));
     }

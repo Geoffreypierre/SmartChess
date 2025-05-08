@@ -222,9 +222,11 @@ public class ChessGameActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String message = editTextMessage.getText().toString().trim();
                 if (!message.isEmpty() && chatRef != null) {
+
+
                     ChatMessage chatMessage = new ChatMessage(
                             currentUserId,
-                            "",
+                            playerInfoViewBlack.getPseudo(),
                             message,
                             System.currentTimeMillis()
                     );
@@ -243,6 +245,8 @@ public class ChessGameActivity extends AppCompatActivity {
                 public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {
                     ChatMessage message = dataSnapshot.getValue(ChatMessage.class);
                     if (message != null && chatAdapter != null) {
+                        System.out.println("Message reçu : " + message.getMessage());
+                        System.out.println("Sender : " + message.getSenderName());
                         chatAdapter.addMessage(message);
 
                         RecyclerView recyclerView = chatDialog.findViewById(R.id.recyclerViewChat);
