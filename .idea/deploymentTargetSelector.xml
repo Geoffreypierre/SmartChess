@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="SmartChess">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-08T14:28:41.460300516Z">
+        <DropdownSelection timestamp="2025-05-11T22:23:18.498311554Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CWB0JZXHV" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/home/valentin/.android/avd/Pixel_6_API_27.avd" />
             </handle>
           </Target>
         </DropdownSelection>

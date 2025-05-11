@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/custom_bg_dialog"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:id="@+id/textWinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Joueur 1 a gagné par échec et mat"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:gravity="center"
+        android:paddingBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/textEloChange"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="+5 Elo"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:gravity="center"
+        android:paddingBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btn_quit_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quitter" />
+</LinearLayout>

@@ -5,9 +5,12 @@ import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
 import com.example.smartchess.chess.chessboard.Position;
+import com.example.smartchess.chess.controller.ChessGameController;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
 
 public class LocalGameMode implements GameMode {
+
+    protected ChessGameController.GameOverDialogCallback dialogCallback;
 
     @Override
     public void onMoveValidated(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
@@ -60,6 +63,12 @@ public class LocalGameMode implements GameMode {
 
     @Override
     public void beforeMovePiece(ChessGame game) {
+
+    }
+
+    @Override
+    public void setDialogCallback(ChessGameController.GameOverDialogCallback callback) {
+        this.dialogCallback = callback;
 
     }
 

@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -147,7 +148,7 @@ public class ChessGameActivity extends AppCompatActivity {
         });
 
         ChessGameController controller = new ChessGameController(game, chessBoardView, mode,
-                playerInfoViewWhite, playerInfoViewBlack);
+                playerInfoViewWhite, playerInfoViewBlack, this::showGameOverDialogMulti);
         chessBoardView.setGameController(controller);
 
         setupQuitDialog();
@@ -191,7 +192,7 @@ public class ChessGameActivity extends AppCompatActivity {
                 }
 
                 Log.e("ENDGAME", Arrays.deepToString(game.getBoard()));
-                finish();
+
             }
         });
 
@@ -325,4 +326,29 @@ public class ChessGameActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> Log.e("Firestore", "Erreur chargement user " + userId, e));
     }
+
+    private void showGameOverDialogMulti(String winnerText, String eloChangeText) {
+        Dialog gameOverDialog = new Dialog(this);
+        gameOverDialog.setContentView(R.layout.dialog_game_over);
+        gameOverDialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        gameOverDialog.setCancelable(false);
+
+        TextView textWinner = gameOverDialog.findViewById(R.id.textWinner);
+        TextView textElo = gameOverDialog.findViewById(R.id.textEloChange);
+        Button btnQuit = gameOverDialog.findViewById(R.id.btn_quit_game);
+
+        textWinner.setText(winnerText);
+        textElo.setText(eloChangeText);
+
+        btnQuit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                gameOverDialog.dismiss();
+                finish(); // ou retourner au menu principal
+            }
+        });
+
+        gameOverDialog.show();
+    }
+
 }

@@ -1,15 +1,19 @@
 package com.example.smartchess.chess.gamemodes;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.example.smartchess.auth.ConnexionActivity;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
 import com.example.smartchess.chess.chessboard.Position;
 import com.example.smartchess.chess.chessboard.pieces.Piece;
+import com.example.smartchess.chess.controller.ChessGameController;
+import com.example.smartchess.chess.controller.GameOverInfo;
 import com.example.smartchess.chess.historique.HistoriquePartie;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
 import com.example.smartchess.services.HistoriquePartieService;
@@ -19,12 +23,16 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class MultiplayerGameMode implements GameMode {
+
+    protected ChessGameController.GameOverDialogCallback dialogCallback;
 
     private final DatabaseReference gamesRef;
     private final String gameId;
@@ -81,10 +89,14 @@ public class MultiplayerGameMode implements GameMode {
     public void onGameOver(String winner,String loser, String description) {
 
 
+
+
         gamesRef.child(gameId).get().addOnSuccessListener(snapshot -> {
             if (snapshot.exists()) {
                 String playerWhite = snapshot.child("playerWhite").getValue(String.class);
                 String playerBlack = snapshot.child("playerBlack").getValue(String.class);
+
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
 
                 DataSnapshot movesSnapshot = snapshot.child("moves");
                 List<String> movesList = new ArrayList<>();
@@ -103,6 +115,8 @@ public class MultiplayerGameMode implements GameMode {
 
                 if (winner != null && winner.equals("White")){
                     partie.setWinnerId(playerWhite);
+
+
                 }
                 else if ( winner != null && winner.equals("Black")){
                     partie.setWinnerId(playerBlack);
@@ -127,13 +141,114 @@ public class MultiplayerGameMode implements GameMode {
                     else{
                         partie.setWinnerId(null);
 
+
                     }
                 }
+
 
 
                 partie.setResult(description);
                 partie.setTimestamp(new Date());
                 partie.setDuration(120);
+
+                // Afficher la boîte de dialogue de fin de partie
+                if (dialogCallback != null) {
+
+
+
+                    if(partie.getWinnerId() == null){
+                        String textpop = "Match nul\n"+description;
+                        String eloChange = "+0 Elo";
+
+                        GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                        gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+
+                    }
+                    else if (partie.getWinnerId().equals(playerWhite)){
+                        db.collection("users").document(playerWhite)
+                                .get()
+                                .addOnCompleteListener(task -> {
+                                    String eloChange = "+0 Elo";
+                                    if (task.isSuccessful()) {
+                                        DocumentSnapshot document = task.getResult();
+
+
+                                        if (document.exists()) {
+                                            String whitename = document.getString("username");
+                                            String textpop = whitename + " a gagné !\n"+description;
+                                            dialogCallback.show(textpop,eloChange);
+
+                                            // envoyer une notif game over pour la partie avec les parametres
+                                            // winner, loser, description
+                                            GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                                            gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+
+
+
+                                        } else {
+
+                                            String whitename = "Joueur blanc";
+                                            String textpop = whitename + " a gagné !\n"+description;
+
+                                            dialogCallback.show(textpop,"+0 Elo");
+                                            GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                                            gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+                                        }
+                                    } else {
+                                        String whitename = "Joueur blanc";
+                                        String textpop = whitename + " a gagné !\n"+description;
+                                        dialogCallback.show(textpop,eloChange);
+                                        GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                                        gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+                                    }
+                                });
+
+                    }
+                    else{
+                        db.collection("users").document(playerBlack)
+                                .get()
+                                .addOnCompleteListener(task -> {
+
+                                    String eloChange = "+0 Elo";
+
+                                    System.out.println("appel firestore");
+                                    if (task.isSuccessful()) {
+                                        DocumentSnapshot document = task.getResult();
+                                        System.out.println("Document : " + document);
+                                        System.out.println("Document ID : " + document.getId());
+                                        if (document.exists()) {
+                                            System.out.println("Document existe");
+                                            String blackname = document.getString("username");
+                                            String textpop = blackname + " a gagné !\n"+description;
+                                            dialogCallback.show(textpop,eloChange);
+
+                                            GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                                            gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+
+                                        } else {
+
+                                            String blackname = "Joueur noir";
+                                            String textpop = blackname + " a gagné !\n"+description;
+                                            dialogCallback.show(textpop,eloChange);
+
+                                            GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                                            gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+                                        }
+                                    } else {
+                                        String blackname = "Joueur noir";
+                                        String textpop = blackname + " a gagné !\n"+description;
+                                        dialogCallback.show(textpop,eloChange);
+
+                                        GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
+                                        gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
+                                    }
+                                });
+                    }
+
+
+                } else {
+                    Log.e("MultiplayerGameMode", "DialogCallback is null");
+                }
 
 
                 new HistoriquePartieService().ajouterPartie(partie, unused -> {
@@ -144,6 +259,9 @@ public class MultiplayerGameMode implements GameMode {
                 }, e -> Log.e("Historique", "Erreur enregistrement historique", e));
             }
         }).addOnFailureListener(e -> Log.e("GameOver", "Erreur récupération partie", e));
+
+
+
 
     }
 
@@ -224,6 +342,12 @@ public class MultiplayerGameMode implements GameMode {
         });
     }
 
+    @Override
+    public void setDialogCallback(ChessGameController.GameOverDialogCallback callback) {
+
+        this.dialogCallback = callback;
+    }
+
 
     @Override
     public void initGame(ChessGame game, ChessBoardView view) {
@@ -235,6 +359,7 @@ public class MultiplayerGameMode implements GameMode {
         }
 
         startListeningForMoves(game, view);
+        startListeningForGameOver(game);
 
     }
 
@@ -362,6 +487,33 @@ public class MultiplayerGameMode implements GameMode {
             }
         });
     }
+
+    //Listen for game over
+    public void startListeningForGameOver(ChessGame game) {
+        gamesRef.child(gameId).child("gameOver").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                GameOverInfo gameOverInfo = snapshot.getValue(GameOverInfo.class);
+                if (gameOverInfo != null) {
+
+                    String textpop = gameOverInfo.getText();
+                    String eloChange = gameOverInfo.getElochange();
+
+                    if (dialogCallback != null) {
+                        dialogCallback.show(textpop,eloChange);
+                    } else {
+                        Log.e("MultiplayerGameMode", "DialogCallback is null");
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("Multiplayer", "Erreur écoute gameOver", error.toException());
+            }
+        });
+    }
+
 
     /**
      * Interface fonctionnelle pour vérifier le tour.

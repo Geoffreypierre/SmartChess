@@ -11,8 +11,15 @@ import com.example.smartchess.chess.gamemodes.GameMode;
 import com.example.smartchess.chess.gamemodes.MultiplayerGameMode;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
 
+
 public class ChessGameController {
 
+    public interface GameOverDialogCallback {
+        void show(String winnerText, String eloChangeText);
+    }
+
+
+    private GameOverDialogCallback gameOverDialogCallback;
     private ChessGame chessGame;
     private ChessBoardView boardView;
     private GameMode gameMode;
@@ -23,12 +30,13 @@ public class ChessGameController {
     private int selectedRow = -1;
     private int selectedCol = -1;
 
-    public ChessGameController(ChessGame game, ChessBoardView view, GameMode mode, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
+    public ChessGameController(ChessGame game, ChessBoardView view, GameMode mode, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack, GameOverDialogCallback dialogCallback) {
         this.chessGame = game;
         this.boardView = view;
         this.gameMode = mode;
         this.playerInfoViewWhite = playerInfoViewWhite;
         this.playerInfoViewBlack = playerInfoViewBlack;
+        this.gameOverDialogCallback = dialogCallback;
 
         this.chessGame.setGameOverCallback(new ChessGame.GameOverCallback() {
             @Override
@@ -39,6 +47,7 @@ public class ChessGameController {
 
         //init ; multi = écouter les coups joués
 
+        this.gameMode.setDialogCallback(dialogCallback);
         this.gameMode.initGame(this.chessGame, this.boardView);
     }
 

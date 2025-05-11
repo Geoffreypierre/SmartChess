@@ -5,6 +5,7 @@ import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
 import com.example.smartchess.chess.chessboard.Move;
 import com.example.smartchess.chess.chessboard.Position;
+import com.example.smartchess.chess.controller.ChessGameController;
 import com.example.smartchess.chess.playerinfos.PlayerInfoView;
 
 public interface GameMode {
@@ -20,4 +21,6 @@ public interface GameMode {
     void onGameOver(String winner,String loser, String description);
 
     void beforeMovePiece(ChessGame game);
+
+    void setDialogCallback(ChessGameController.GameOverDialogCallback callback);
 }
