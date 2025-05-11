@@ -1,7 +1,5 @@
 package com.example.smartchess.chess.chessboard;
 
-
-
 import com.example.smartchess.chess.chessboard.pieces.Bishop;
 import com.example.smartchess.chess.chessboard.pieces.King;
 import com.example.smartchess.chess.chessboard.pieces.Knight;
@@ -34,9 +32,18 @@ public class ChessGame {
     }
 
     private OnPieceCapturedListener pieceCapturedListener;
+    private OnPromotionNeededListener promotionNeededListener;
 
     public interface GameOverCallback {
-        void onGameOver(String winner,String loser, String description);
+        void onGameOver(String winner, String loser, String description);
+    }
+
+    public interface OnPromotionNeededListener {
+        void onPromotionNeeded(int row, int col, Piece.Color pieceColor, PromotionCallback callback);
+    }
+
+    public interface PromotionCallback {
+        void onPromotionSelected(String promotionType);
     }
 
     private GameOverCallback gameOverCallback;
@@ -47,6 +54,10 @@ public class ChessGame {
 
     public void setOnPieceCapturedListener(OnPieceCapturedListener listener) {
         this.pieceCapturedListener = listener;
+    }
+
+    public void setOnPromotionNeededListener(OnPromotionNeededListener listener) {
+        this.promotionNeededListener = listener;
     }
 
     public void setWhiteTurn(boolean whiteTurn) {
@@ -60,7 +71,6 @@ public class ChessGame {
     }
 
     public void setEnPassantSquare(Position move) {
-     
         enPassantSquare = move;
     }
 
@@ -75,7 +85,6 @@ public class ChessGame {
     }
 
     public void initBoard() {
-        // Placement des pions
         for (int i = 0; i < BOARD_SIZE; i++) {
             board[1][i] = new Pawn(Piece.Color.BLACK);
             board[6][i] = new Pawn(Piece.Color.WHITE);
@@ -114,7 +123,7 @@ public class ChessGame {
         return null;
     }
 
-    public boolean canMovePiece(int fromRow,int fromCol,int toRow,int toCol){
+    public boolean canMovePiece(int fromRow, int fromCol, int toRow, int toCol) {
         if (fromRow < 0 || fromRow >= BOARD_SIZE || fromCol < 0 || fromCol >= BOARD_SIZE ||
                 toRow < 0 || toRow >= BOARD_SIZE || toCol < 0 || toCol >= BOARD_SIZE) {
             System.out.println("Invalid move: out of bounds");
@@ -128,12 +137,10 @@ public class ChessGame {
             return false;
         }
         Piece target = board[toRow][toCol];
-        // Interdire de capturer ses propres pièces
         if (target != null && target.getColor() == piece.getColor()) {
             System.out.println("Invalid move: cannot capture your own piece");
             return false;
         }
-
 
         List<Position> moves = piece.getAvailableMovesWithCheck(fromRow, fromCol, board, enPassantSquare);
         Position proposedMove = new Position(toRow, toCol);
@@ -146,7 +153,6 @@ public class ChessGame {
     }
 
     public Move movePiece(Move move) {
-
         int fromRow = move.getFromRow();
         int fromCol = move.getFromCol();
         int toRow = move.getToRow();
@@ -156,12 +162,12 @@ public class ChessGame {
 
         Move finalMove = new Move(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(), move.getColor(), move.getPieceType());
 
-
         if (fromRow < 0 || fromRow >= BOARD_SIZE || fromCol < 0 || fromCol >= BOARD_SIZE ||
                 toRow < 0 || toRow >= BOARD_SIZE || toCol < 0 || toCol >= BOARD_SIZE) {
             System.out.println("Invalid move: out of bounds");
             return null;
         }
+
         Piece piece = board[fromRow][fromCol];
         if (piece == null) return null;
         if ((piece.getColor() == Piece.Color.WHITE && !whiteTurn) ||
@@ -169,13 +175,12 @@ public class ChessGame {
             System.out.println("Invalid move: not your turn");
             return null;
         }
+
         Piece target = board[toRow][toCol];
-        // Interdire de capturer ses propres pièces
         if (target != null && target.getColor() == piece.getColor()) {
             System.out.println("Invalid move: cannot capture your own piece");
             return null;
         }
-
 
         List<Position> moves = piece.getAvailableMovesWithCheck(fromRow, fromCol, board, enPassantSquare);
         Position proposedMove = new Position(toRow, toCol);
@@ -184,25 +189,19 @@ public class ChessGame {
             return null;
         }
 
-
-
-        //Si c'est une capture d'abord on appelle takePiece avant de déplacer mon pion sur la case
         if (target != null) {
             takePiece(toRow, toCol, whiteTurn);
             finalMove.setCapture(true);
         }
-        // Déplacer la pièce
+
         board[toRow][toCol] = piece;
         board[fromRow][fromCol] = null;
         piece.setMoved(true);
 
-
-        // --- Gestion du roque pour le roi ---
         if (piece instanceof King) {
             int colDiff = toCol - fromCol;
-            if (Math.abs(colDiff) == 2) { // le roi se déplace de 2 cases, donc c'est un roque
+            if (Math.abs(colDiff) == 2) {
                 if (colDiff > 0) {
-                    // Petit roque : la tour part de la colonne 7 et se place en colonne 5
                     Piece rook = board[toRow][7];
                     board[toRow][5] = rook;
                     board[toRow][7] = null;
@@ -211,7 +210,6 @@ public class ChessGame {
                     }
                     finalMove.setCastling(true);
                 } else {
-                    // Grand roque : la tour part de la colonne 0 et se place en colonne 3
                     Piece rook = board[toRow][0];
                     board[toRow][3] = rook;
                     board[toRow][0] = null;
@@ -223,93 +221,96 @@ public class ChessGame {
             }
         }
 
-
-        // Gérer la prise en passant et la promotion
-
         if (piece instanceof Pawn) {
             Pawn pawn = (Pawn) piece;
 
-            // Si le pion se déplace sur une case d'en passant, supprimer le pion adverse
             if (enPassantSquare != null && toRow == enPassantSquare.getRow() && toCol == enPassantSquare.getCol()) {
                 System.out.println("En passant");
                 if (whiteTurn) {
-                    takePiece(toRow + 1, toCol, whiteTurn); // Supprimer le pion noir
-
+                    takePiece(toRow + 1, toCol, whiteTurn);
                 } else {
-                    takePiece(toRow - 1, toCol, whiteTurn); // Supprimer le pion blanc
+                    takePiece(toRow - 1, toCol, whiteTurn);
                 }
             }
 
-            setEnPassantSquare(null); // Réinitialiser la case d'en passant
+            setEnPassantSquare(null);
 
-            if (Math.abs(fromRow - toRow) == 2 && Math.abs(fromCol - toCol) == 0) { //déplacement de deux cases donc un enpassantsquare est créé
-                // En passant
+            if (Math.abs(fromRow - toRow) == 2 && Math.abs(fromCol - toCol) == 0) {
                 System.out.println("En passant");
-                if (whiteTurn) { //CREATION D'UNE CASE EN PASSANT
+                if (whiteTurn) {
                     setEnPassantSquare(new Position(fromRow - 1, fromCol));
                 } else {
                     setEnPassantSquare(new Position(fromRow + 1, fromCol));
                 }
-
             } else {
                 System.out.println("Pas en passant");
                 setEnPassantSquare(null);
             }
 
-
             if (pawn.isPromotionRow(toRow, board)) {
+                System.out.println("Promotion du pion nécessaire");
 
-                //CHOIX DE LA PIECE DE PROMOTION
+                final Move moveFinal = finalMove;
+                final int promotionRow = toRow;
+                final int promotionCol = toCol;
 
-                System.out.println("Promotion du pion en dame");
+                if (promotionNeededListener != null) {
+                    promotionNeededListener.onPromotionNeeded(toRow, toCol, piece.getColor(),
+                            new PromotionCallback() {
+                                @Override
+                                public void onPromotionSelected(String promotionType) {
+                                    Piece promotedPiece = pawn.promote(promotionType);
+                                    board[promotionRow][promotionCol] = promotedPiece;
+                                    moveFinal.setPromotion(promotionType);
 
-                Piece promotedPiece = pawn.promote("queen");
-                board[toRow][toCol] = promotedPiece;
+                                    checkGameState(promotedPiece, moveFinal);
+                                }
+                            });
 
-                finalMove.setPromotion("queen");
+                    return finalMove;
+                } else {
+                    System.out.println("Pas de listener pour la promotion, promotion automatique en dame");
+                    Piece promotedPiece = pawn.promote("queen");
+                    board[toRow][toCol] = promotedPiece;
+                    finalMove.setPromotion("queen");
+                }
             }
-        }
-        else {
-            // Réinitialiser la case d'en passant car une piece a été joué et ce n'est pas un pion
+        } else {
             setEnPassantSquare(null);
         }
 
-        System.out.println("Piece moved !");
+        System.out.println("Piece moved!");
 
-
-
-        //verifier si l'adversaire peut encore bouger des pieces avec la fonction CanAPieceMove de ChessUtils
-        System.out.println("VERIF FIN DE PARTIE");
-        System.out.println(piece.getColor());
-        if(!ChessUtils.CanAPieceMove(board, piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE, enPassantSquare)){
-
-            Piece.Color opponentColor = piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE;
-
-            if (!ChessUtils.CanAPieceMove(board, opponentColor, enPassantSquare)) {
-                if (ChessUtils.isKingInCheck(board, opponentColor, enPassantSquare)) {
-                    System.out.println("CHECKMATE");
-                    finalMove.setCheckmate(true);
-                    if (gameOverCallback != null) {
-                        gameOverCallback.onGameOver(
-                                piece.getColor() == Piece.Color.WHITE ? "White" : "Black",
-                                null,
-                                "Victoire par échec et mat"
-                        );
-                    }
-                } else {
-                    System.out.println("PAT");
-                    if (gameOverCallback != null) {
-                        gameOverCallback.onGameOver(null,null,"Draw");
-                    }
-                }
-            }
+        if (!(piece instanceof Pawn && ((Pawn) piece).isPromotionRow(toRow, board) && promotionNeededListener != null)) {
+            checkGameState(piece, finalMove);
         }
 
         return finalMove;
     }
 
+    private void checkGameState(Piece piece, Move finalMove) {
+        Piece.Color opponentColor = piece.getColor() == Piece.Color.WHITE ? Piece.Color.BLACK : Piece.Color.WHITE;
 
-    // Prise d'une pièce avec indication de qui capture
+        if (!ChessUtils.CanAPieceMove(board, opponentColor, enPassantSquare)) {
+            if (ChessUtils.isKingInCheck(board, opponentColor, enPassantSquare)) {
+                System.out.println("CHECKMATE");
+                finalMove.setCheckmate(true);
+                if (gameOverCallback != null) {
+                    gameOverCallback.onGameOver(
+                            piece.getColor() == Piece.Color.WHITE ? "White" : "Black",
+                            opponentColor == Piece.Color.WHITE ? "White" : "Black",
+                            "Victoire par échec et mat"
+                    );
+                }
+            } else {
+                System.out.println("PAT");
+                if (gameOverCallback != null) {
+                    gameOverCallback.onGameOver(null, null, "Draw");
+                }
+            }
+        }
+    }
+
     public void takePiece(int row, int col, boolean capturedByWhite) {
         if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
             Piece piece = board[row][col];
@@ -323,7 +324,6 @@ public class ChessGame {
         }
     }
 
-
     public interface OnPieceCapturedListener {
         /**
          * Notifie qu'une pièce a été capturée.
@@ -332,8 +332,4 @@ public class ChessGame {
          */
         void onPieceCaptured(Piece capturedPiece, boolean capturedByWhite);
     }
-
-
-
-
 }

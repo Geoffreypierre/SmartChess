@@ -24,6 +24,7 @@ import com.example.smartchess.services.chat.ChatAdapter;
 import com.example.smartchess.services.chat.ChatMessage;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
 import com.example.smartchess.chess.chessboard.ChessGame;
+import com.example.smartchess.chess.chessboard.PromotionDialogHandler;
 import com.example.smartchess.chess.chessboard.pieces.Piece;
 import com.example.smartchess.chess.controller.ChessGameController;
 import com.example.smartchess.chess.gamemodes.GameMode;
@@ -50,6 +51,7 @@ public class ChessGameActivity extends AppCompatActivity {
 
     ChessGame game;
     GameMode mode;
+    PromotionDialogHandler promotionDialogHandler;
 
     AppCompatButton quitBtn;
     AppCompatButton chatBtn;
@@ -91,6 +93,10 @@ public class ChessGameActivity extends AppCompatActivity {
         playerInfoViewBlack.setPseudo("Joueur 2");
         playerInfoViewBlack.setElo(1500);
 
+        promotionDialogHandler = new PromotionDialogHandler(this);
+        promotionDialogHandler.setChessBoardView(chessBoardView);
+        game.setOnPromotionNeededListener(promotionDialogHandler);
+
         Intent intent = getIntent();
         String gameModeString = intent.getStringExtra("game_mode");
         if (gameModeString != null) {
@@ -124,7 +130,7 @@ public class ChessGameActivity extends AppCompatActivity {
             }
         } else {
             mode = new LocalGameMode();
-            chatBtn.setVisibility(View.GONE); // Hide chat button in local mode
+            chatBtn.setVisibility(View.GONE);
         }
 
         ChessTimer timerWhite = new ChessTimer(1*60*1000,1000);

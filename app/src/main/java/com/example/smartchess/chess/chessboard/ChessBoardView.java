@@ -47,6 +47,10 @@ public class ChessBoardView extends View {
         void onAnimationEnd();
     }
 
+    public void refreshView() {
+        invalidate();
+    }
+
     public void setBoardOrientation(ChessGame.BoardOrientation orientation) {
         this.boardOrientation = orientation;
         invalidate();
