@@ -387,8 +387,18 @@ public class MultiplayerGameMode implements GameMode {
                 animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(),game.getPiece(move.getFromRow(), move.getFromCol()), view);
                 view.setAnimationEndCallback(() -> {
 
+                    System.out.println("AVANT MOVE PIECE");
                     Move finalMove = game.movePiece(move);
-                    onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
+                    System.out.println("APRES MOVE PIECE");
+                    if(finalMove != null){
+                        System.out.println("Coup valide !");
+                        onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
+                        System.out.println("Coup valide 2 !");
+                    }
+                    else{
+                        System.out.println("Coup invalide !");
+                    }
+                    System.out.println("Coup valide ou non 3 !");
 
 
                 });

@@ -262,12 +262,16 @@ public class ChessGame {
                                     Piece promotedPiece = pawn.promote(promotionType);
                                     board[promotionRow][promotionCol] = promotedPiece;
                                     moveFinal.setPromotion(promotionType);
+                                    finalMove.setPromotion(promotionType);
 
                                     checkGameState(promotedPiece, moveFinal);
-                                }
-                            });
 
+                                }
+
+                            });
                     return finalMove;
+
+
                 } else {
                     System.out.println("Pas de listener pour la promotion, promotion automatique en dame");
                     Piece promotedPiece = pawn.promote("queen");
