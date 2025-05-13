@@ -37,6 +37,7 @@ public class MultiplayerGameMode implements GameMode {
     private final DatabaseReference gamesRef;
     private final String gameId;
     private final String playerColor;
+    private boolean processingMove = false;
 
     public MultiplayerGameMode(String gameId, String playerColor) {
         this.gamesRef = FirebaseDatabase.getInstance().getReference("games");
@@ -46,51 +47,30 @@ public class MultiplayerGameMode implements GameMode {
 
     @Override
     public void onMoveValidated(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
-
         System.out.println("Move validated: " + move.getToRow() + ", " + move.getToCol());
-
-
-        // Envoyer le coup au serveur
         gamesRef.child(gameId).child("moves").push().setValue(move)
                 .addOnSuccessListener(unused -> Log.d("Matchmaker", "Coup envoyé avec succès !"))
                 .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors de l'envoi du coup", e));
 
         view.invalidate();
-
-        // changer le tour
         onTurnChanged(playerColor.equals("white"), game, view, null, null);
-
     }
 
     @Override
     public void onTurnChanged(boolean whiteTurn, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
-        // Changer le tour dans le serveur
         getCurrentTurn(turn -> {
-
-            // Changer le tour dans le jeu
             game.setWhiteTurn(!turn.equals("white"));
 
             gamesRef.child(gameId).child("turn").setValue(turn.equals("white") ? "black" : "white")
                     .addOnSuccessListener(unused -> Log.d("Matchmaker", "Tour changé avec succès !"))
                     .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors du changement de tour", e));
-
-
-
         });
-
-
-
-
         view.setSelectedCol(-1);
         view.setSelectedRow(-1);
     }
 
     @Override
-    public void onGameOver(String winner,String loser, String description) {
-
-
-
-
+    public void onGameOver(String winner, String loser, String description) {
         gamesRef.child(gameId).get().addOnSuccessListener(snapshot -> {
             if (snapshot.exists()) {
                 String playerWhite = snapshot.child("playerWhite").getValue(String.class);
@@ -115,12 +95,9 @@ public class MultiplayerGameMode implements GameMode {
 
                 if (winner != null && winner.equals("White")){
                     partie.setWinnerId(playerWhite);
-
-
                 }
                 else if ( winner != null && winner.equals("Black")){
                     partie.setWinnerId(playerBlack);
-
                 }
                 else{
                     if(winner != null){
@@ -128,7 +105,6 @@ public class MultiplayerGameMode implements GameMode {
                             partie.setWinnerId(playerWhite);
                         } else {
                             partie.setWinnerId(playerBlack);
-
                         }
                     }
                     else if (loser != null){
@@ -140,21 +116,13 @@ public class MultiplayerGameMode implements GameMode {
                     }
                     else{
                         partie.setWinnerId(null);
-
-
                     }
                 }
-
-
-
                 partie.setResult(description);
                 partie.setTimestamp(new Date());
                 partie.setDuration(120);
 
-                // Afficher la boîte de dialogue de fin de partie
                 if (dialogCallback != null) {
-
-
 
                     if(partie.getWinnerId() == null){
                         String textpop = "Match nul\n"+description;
@@ -178,12 +146,8 @@ public class MultiplayerGameMode implements GameMode {
                                             String textpop = whitename + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
 
-                                            // envoyer une notif game over pour la partie avec les parametres
-                                            // winner, loser, description
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
-
-
 
                                         } else {
 
@@ -245,11 +209,9 @@ public class MultiplayerGameMode implements GameMode {
                                 });
                     }
 
-
                 } else {
                     Log.e("MultiplayerGameMode", "DialogCallback is null");
                 }
-
 
                 new HistoriquePartieService().ajouterPartie(partie, unused -> {
                     Log.d("Historique", "Partie enregistrée avec succès");
@@ -260,14 +222,9 @@ public class MultiplayerGameMode implements GameMode {
             }
         }).addOnFailureListener(e -> Log.e("GameOver", "Erreur récupération partie", e));
 
-
-
-
     }
 
-
     private String convertMoveToNotation(Move move) {
-        // Gestion du roque
         if (move.isCastling()) {
             if (move.getToCol() == 6) return "O-O";     // Petit roque
             if (move.getToCol() == 2) return "O-O-O";   // Grand roque
@@ -282,12 +239,10 @@ public class MultiplayerGameMode implements GameMode {
         int toRank = 8 - move.getToRow();
         String toSquare = toFile + String.valueOf(toRank);
 
-        // Pièce : on met son symbole (rien pour les pions)
         if (!"Pawn".equals(pieceType)) {
             notation.append(getPieceLetter(pieceType));
         }
 
-        // Capture
         if (move.isCapture()) {
             if ("Pawn".equals(pieceType)) {
                 char fromFile = (char) ('a' + move.getFromCol());
@@ -296,15 +251,12 @@ public class MultiplayerGameMode implements GameMode {
             notation.append("x");
         }
 
-        // Case d'arrivée
         notation.append(toSquare);
 
-        // Promotion
         if (promotion != null && !promotion.isEmpty()) {
             notation.append("=").append(getPieceLetter(promotion));
         }
 
-        // Échec / Mat
         if (move.isCheckmate()) {
             notation.append("#");
         } else if (move.isCheck()) {
@@ -329,8 +281,6 @@ public class MultiplayerGameMode implements GameMode {
 
     @Override
     public void beforeMovePiece(ChessGame game) {
-
-        //actualiser le tour en fonction des données serveur
         getCurrentTurn(turn -> {
             if (turn.equals("white")) {
                 System.out.println("C'est le tour des blancs");
@@ -344,15 +294,12 @@ public class MultiplayerGameMode implements GameMode {
 
     @Override
     public void setDialogCallback(ChessGameController.GameOverDialogCallback callback) {
-
         this.dialogCallback = callback;
     }
 
 
     @Override
     public void initGame(ChessGame game, ChessBoardView view) {
-
-        //si je suis le joueur noir je dois tourner le plateau
         if(playerColor.equals("black")) {
             game.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
             view.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
@@ -360,20 +307,19 @@ public class MultiplayerGameMode implements GameMode {
 
         startListeningForMoves(game, view);
         startListeningForGameOver(game);
-
     }
 
-    /**
-     * Vérifie si le coup est valide et l’appliquer.
-     */
     public void validateMove(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
+        if (view.isAnimating() || processingMove) {
+            return;
+        }
+
         checkIfMyTurn(isMyTurn -> {
             if (!isMyTurn) {
                 System.out.println("Ce n'est pas votre tour !");
                 return;
             }
 
-            //verifier si je bouge ma couleur
             if(!move.getColor().equals(playerColor)){
                 System.out.println("Ce n'est pas votre couleur !");
                 return;
@@ -381,12 +327,9 @@ public class MultiplayerGameMode implements GameMode {
 
             boolean moveOk = game.canMovePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
             if (moveOk) {
-                //appliquer animation
-
-                //animate
-                animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(),game.getPiece(move.getFromRow(), move.getFromCol()), view);
+                processingMove = true;
+                animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(), game.getPiece(move.getFromRow(), move.getFromCol()), view);
                 view.setAnimationEndCallback(() -> {
-
                     System.out.println("AVANT MOVE PIECE");
                     Move finalMove = game.movePiece(move);
                     System.out.println("APRES MOVE PIECE");
@@ -399,11 +342,8 @@ public class MultiplayerGameMode implements GameMode {
                         System.out.println("Coup invalide !");
                     }
                     System.out.println("Coup valide ou non 3 !");
-
-
+                    processingMove = false;
                 });
-
-
             } else {
                 System.out.println("Coup invalide !");
             }
@@ -411,16 +351,9 @@ public class MultiplayerGameMode implements GameMode {
     }
 
     public void animateMove(int fromRow, int fromCol, int toRow, int toCol, Piece piece, ChessBoardView boardView) {
-
-        boardView.animateMove(fromRow,fromCol,toRow,toCol, piece);
-
+        boardView.animateMove(fromRow, fromCol, toRow, toCol, piece);
     }
 
-
-
-    /**
-     * Vérifie si c’est le tour du joueur et retourne le résultat dans un callback.
-     */
     public void checkIfMyTurn(OnTurnCheckListener listener) {
         gamesRef.child(gameId).child("turn").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -454,10 +387,6 @@ public class MultiplayerGameMode implements GameMode {
         });
     }
 
-
-    /**
-     * Écoute les nouveaux coups joués par l’adversaire et les applique.
-     */
     public void startListeningForMoves(ChessGame game, ChessBoardView view) {
         gamesRef.child(gameId).child("moves").addChildEventListener(new ChildEventListener() {
             @Override
@@ -469,23 +398,39 @@ public class MultiplayerGameMode implements GameMode {
                 if (move != null) {
                     System.out.println("COUP RECU 2");
 
-                    if(!playerColor.equals(move.getColor())){ //si je ne suis pas celui qui a joué le coup
+                    if(!playerColor.equals(move.getColor()) && !view.isAnimating() && !processingMove){
                         System.out.println("COUP RECU 3");
 
-                        Move finalMove = game.movePiece(move);
+                        processingMove = true;
 
-                        view.invalidate();
-                        // Changer le tour
-                        getCurrentTurn(turn -> {
+                        // Récupérer la pièce à déplacer
+                        Piece pieceToMove = game.getPiece(move.getFromRow(), move.getFromCol());
 
-                            // Changer le tour dans le jeu
-                            game.setWhiteTurn(turn.equals("white"));
+                        if (pieceToMove != null) {
+                            // Animer le mouvement pour le joueur qui reçoit le coup
+                            animateMove(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol(), pieceToMove, view);
 
-                        });
+                            view.setAnimationEndCallback(() -> {
+                                // Après l'animation, appliquer le mouvement sur le plateau
+                                Move finalMove = game.movePiece(move);
+                                view.invalidate();
 
+                                getCurrentTurn(turn -> {
+                                    game.setWhiteTurn(turn.equals("white"));
+                                    processingMove = false;
+                                });
+                            });
+                        } else {
+                            // Si la pièce est null (ne devrait pas arriver), appliquer directement le coup
+                            Move finalMove = game.movePiece(move);
+                            view.invalidate();
+
+                            getCurrentTurn(turn -> {
+                                game.setWhiteTurn(turn.equals("white"));
+                                processingMove = false;
+                            });
+                        }
                     }
-
-
                 }
             }
 
@@ -498,7 +443,6 @@ public class MultiplayerGameMode implements GameMode {
         });
     }
 
-    //Listen for game over
     public void startListeningForGameOver(ChessGame game) {
         gamesRef.child(gameId).child("gameOver").addValueEventListener(new ValueEventListener() {
             @Override
@@ -524,10 +468,6 @@ public class MultiplayerGameMode implements GameMode {
         });
     }
 
-
-    /**
-     * Interface fonctionnelle pour vérifier le tour.
-     */
     public interface OnTurnCheckListener {
         void onCheck(boolean isMyTurn);
     }
