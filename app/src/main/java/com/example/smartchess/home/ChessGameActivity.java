@@ -350,7 +350,11 @@ public class ChessGameActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 gameOverDialog.dismiss();
-                finish(); // ou retourner au menu principal
+                //retourner au menu principal
+                Intent intent = new Intent(ChessGameActivity.this, PlayActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish();
             }
         });
 

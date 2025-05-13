@@ -45,6 +45,11 @@ public class ChessGameController {
             }
         });
 
+        this.chessGame.setOnPromotionCompletedListener(finalMove -> {
+
+            mode.onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
+        });
+
         //init ; multi = écouter les coups joués
 
         this.gameMode.setDialogCallback(dialogCallback);
