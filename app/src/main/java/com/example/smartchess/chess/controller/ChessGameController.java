@@ -78,6 +78,12 @@ public class ChessGameController {
 
 
             gameMode.beforeMovePiece(chessGame);
+            if(chessGame.getPiece(selectedRow, selectedCol) == null) {
+                return;
+            }
+            if (chessGame.getPiece(selectedRow, selectedCol).getColor() == null) {
+                return;
+            }
             Move move = new Move(selectedRow, selectedCol, row, col,chessGame.getPiece(selectedRow,selectedCol).getColor().equals(Piece.Color.BLACK) ? "black" : "white", chessGame.getPiece(selectedRow, selectedCol).toString());
             gameMode.validateMove(move, chessGame, boardView, playerInfoViewWhite, playerInfoViewBlack);
 
