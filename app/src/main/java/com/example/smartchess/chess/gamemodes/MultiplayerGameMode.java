@@ -335,8 +335,19 @@ public class MultiplayerGameMode implements GameMode {
                     System.out.println("APRES MOVE PIECE");
                     if(finalMove != null){
                         System.out.println("Coup valide !");
-                        onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
-                        System.out.println("Coup valide 2 !");
+
+
+
+                        if(finalMove.getPromotion()!= null &&finalMove.getPromotion().equals("waiting")){
+                            System.out.println("Promotion en attente !");
+                        }
+                        else {
+                            onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
+                            System.out.println("Coup valide 2 !");
+                        }
+
+
+
                     }
                     else{
                         System.out.println("Coup invalide !");

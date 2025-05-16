@@ -124,6 +124,16 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="24dp"
                 android:indeterminateTint="#7B68EE" />
+
+            <Button
+                android:id="@+id/button_cancel_matchmaking"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quitter le matchmaking"
+                android:layout_gravity="center"
+                android:layout_marginTop="16dp"/>
+
         </LinearLayout>
+
     </androidx.cardview.widget.CardView>
 </FrameLayout>

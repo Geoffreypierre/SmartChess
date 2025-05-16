@@ -16,6 +16,16 @@ public class ChessGame {
     private Piece[][] board;
     private boolean whiteTurn;
 
+    public interface OnPromotionCompletedListener {
+        void onPromotionCompleted(Move move);
+    }
+
+    private OnPromotionCompletedListener promotionCompletedListener;
+
+    public void setOnPromotionCompletedListener(OnPromotionCompletedListener listener) {
+        this.promotionCompletedListener = listener;
+    }
+
     public enum BoardOrientation {
         WHITE,
         BLACK
@@ -254,30 +264,54 @@ public class ChessGame {
                 final int promotionRow = toRow;
                 final int promotionCol = toCol;
 
-                if (promotionNeededListener != null) {
-                    promotionNeededListener.onPromotionNeeded(toRow, toCol, piece.getColor(),
-                            new PromotionCallback() {
-                                @Override
-                                public void onPromotionSelected(String promotionType) {
-                                    Piece promotedPiece = pawn.promote(promotionType);
-                                    board[promotionRow][promotionCol] = promotedPiece;
-                                    moveFinal.setPromotion(promotionType);
-                                    finalMove.setPromotion(promotionType);
-
-                                    checkGameState(promotedPiece, moveFinal);
-
-                                }
-
-                            });
-                    return finalMove;
-
+                //cas multi dans lequel on reçoit un coup deja promu
+                if (move.getPromotion() != null) {
+                    System.out.println("Promotion déjà effectuée : " + move.getPromotion());
+                    Piece promotedPiece = pawn.promote(move.getPromotion());
+                    board[promotionRow][promotionCol] = promotedPiece;
+                    finalMove.setPromotion(move.getPromotion());
 
                 } else {
-                    System.out.println("Pas de listener pour la promotion, promotion automatique en dame");
-                    Piece promotedPiece = pawn.promote("queen");
-                    board[toRow][toCol] = promotedPiece;
-                    finalMove.setPromotion("queen");
+                    finalMove.setPromotion("waiting");
+                    System.out.println("Pas de promotion déjà effectuée");
+
+                    if (promotionNeededListener != null) {
+                        promotionNeededListener.onPromotionNeeded(toRow, toCol, piece.getColor(),
+                                new PromotionCallback() {
+                                    @Override
+                                    public void onPromotionSelected(String promotionType) {
+                                        Piece promotedPiece = pawn.promote(promotionType);
+                                        board[promotionRow][promotionCol] = promotedPiece;
+                                        moveFinal.setPromotion(promotionType);
+                                        finalMove.setPromotion(promotionType);
+
+                                        System.out.println("Promotion effectuée : " + promotionType);
+
+                                        checkGameState(promotedPiece, moveFinal);
+
+                                        if (promotionCompletedListener != null) {
+                                            promotionCompletedListener.onPromotionCompleted(moveFinal);
+                                        }
+
+                                    }
+
+                                });
+                        System.out.println("before return final move promote");
+
+
+
+                    } else {
+                        System.out.println("Pas de listener pour la promotion, promotion automatique en dame");
+                        Piece promotedPiece = pawn.promote("queen");
+                        board[toRow][toCol] = promotedPiece;
+                        finalMove.setPromotion("queen");
+                    }
+
                 }
+
+
+
+
             }
         } else {
             setEnPassantSquare(null);
@@ -289,6 +323,7 @@ public class ChessGame {
             checkGameState(piece, finalMove);
         }
 
+        System.out.println("Before return final move last");
         return finalMove;
     }
 

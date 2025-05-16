@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment;
 
 import com.example.smartchess.R;
 import com.example.smartchess.auth.UserSession;
-import com.example.smartchess.matchmaking.Matchmaker;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -79,11 +78,13 @@ public class SecondPlayFragment extends Fragment {
             UserSession session = new UserSession(getContext());
             String userId = session.getUserId();
             int elo = session.getElo();
-            Matchmaker matchmaker = new Matchmaker(userId, elo,"any");
-            System.out.println("TEST AVANT MATCHMAKER");
-            matchmaker.enterQueue();
 
             Intent intent = new Intent(getActivity(), MatchmakingActivity.class);
+
+            intent.putExtra("user_id", userId);
+            intent.putExtra("elo", elo);
+            intent.putExtra("color", "any");
+
             startActivity(intent);
 
 
