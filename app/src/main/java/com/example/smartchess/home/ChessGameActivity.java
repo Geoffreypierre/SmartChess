@@ -198,7 +198,6 @@ public class ChessGameActivity extends AppCompatActivity {
                 }
 
                 Log.e("ENDGAME", Arrays.deepToString(game.getBoard()));
-
             }
         });
 
@@ -336,7 +335,7 @@ public class ChessGameActivity extends AppCompatActivity {
     private void showGameOverDialogMulti(String winnerText, String eloChangeText) {
         Dialog gameOverDialog = new Dialog(this);
         gameOverDialog.setContentView(R.layout.dialog_game_over);
-        gameOverDialog.getWindow().setLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        gameOverDialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         gameOverDialog.setCancelable(false);
 
         TextView textWinner = gameOverDialog.findViewById(R.id.textWinner);
@@ -350,7 +349,7 @@ public class ChessGameActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 gameOverDialog.dismiss();
-                finish(); // ou retourner au menu principal
+                finish();
             }
         });
 
