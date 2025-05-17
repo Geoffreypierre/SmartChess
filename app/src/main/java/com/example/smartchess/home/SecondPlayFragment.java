@@ -84,6 +84,7 @@ public class SecondPlayFragment extends Fragment {
             intent.putExtra("user_id", userId);
             intent.putExtra("elo", elo);
             intent.putExtra("color", "any");
+            intent.putExtra("mode","multiplayer");
 
             startActivity(intent);
 

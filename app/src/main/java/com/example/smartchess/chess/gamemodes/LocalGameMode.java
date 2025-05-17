@@ -33,9 +33,16 @@ public class LocalGameMode implements GameMode {
         if (whiteTurn) {
             playerInfoViewWhite.startTimer();
             playerInfoViewBlack.pauseTimer();
+            game.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
+            view.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
+
+
         } else {
             playerInfoViewWhite.pauseTimer();
             playerInfoViewBlack.startTimer();
+
+            game.setBoardOrientation(ChessGame.BoardOrientation.WHITE);
+            view.setBoardOrientation(ChessGame.BoardOrientation.WHITE);
         }
 
         view.setSelectedCol(-1);
@@ -83,6 +90,10 @@ public class LocalGameMode implements GameMode {
 
     @Override
     public void onGameOver(String winner,String loser, String description) {
+
+        if (dialogCallback != null) {
+            dialogCallback.show("Fin","");
+        }
 
     }
 

@@ -29,8 +29,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
-public class MultiplayerGameMode implements GameMode {
+public class DiffereGameMode implements GameMode {
 
     protected ChessGameController.GameOverDialogCallback dialogCallback;
 
@@ -39,8 +40,8 @@ public class MultiplayerGameMode implements GameMode {
     private final String playerColor;
     private boolean processingMove = false;
 
-    public MultiplayerGameMode(String gameId, String playerColor) {
-        this.gamesRef = FirebaseDatabase.getInstance().getReference("games");
+    public DiffereGameMode(String gameId, String playerColor) {
+        this.gamesRef = FirebaseDatabase.getInstance().getReference("differedGames");
         this.gameId = gameId;
         this.playerColor = playerColor;
     }
@@ -51,6 +52,11 @@ public class MultiplayerGameMode implements GameMode {
         gamesRef.child(gameId).child("moves").push().setValue(move)
                 .addOnSuccessListener(unused -> Log.d("Matchmaker", "Coup envoyé avec succès !"))
                 .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors de l'envoi du coup", e));
+
+        //enregistrer l'état final du plateau
+
+        Map<String, Object> state = game.serializeFullState();
+        gamesRef.child(gameId).child("boardState").setValue(state);
 
         view.invalidate();
         onTurnChanged(playerColor.equals("white"), game, view, null, null);
@@ -210,7 +216,7 @@ public class MultiplayerGameMode implements GameMode {
                     }
 
                 } else {
-                    Log.e("MultiplayerGameMode", "DialogCallback is null");
+                    Log.e("DiffereGameMode", "DialogCallback is null");
                 }
 
                 new HistoriquePartieService().ajouterPartie(partie, unused -> {
@@ -308,10 +314,31 @@ public class MultiplayerGameMode implements GameMode {
         startListeningForMoves(game, view);
         startListeningForGameOver(game);
 
-        //recuperer mon id
+        // Récupérer l'état du plateau depuis Firebase
+
+        gamesRef.child(gameId).child("boardState").get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                Map<String, Object> fullState = (Map<String, Object>) snapshot.getValue();
+                game.loadFullState(fullState);
+                System.out.println("État du plateau restauré !");
+
+                // recuperer le tour
+                getCurrentTurn(turn -> {
+                    game.setWhiteTurn(turn.equals("white"));
+                });
 
 
-        gamesRef.child(gameId).child("abandon").onDisconnect().setValue(playerColor);
+                view.invalidate(); // Redessiner le plateau avec le bon état
+
+            } else {
+                System.out.println("Aucun état de plateau trouvé. Utilisation de l'état initial.");
+            }
+        }).addOnFailureListener(e -> {
+            Log.e("DiffereGameMode", "Erreur lors de la récupération du plateau", e);
+        });
+
+
+
     }
 
     public void validateMove(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
@@ -454,7 +481,7 @@ public class MultiplayerGameMode implements GameMode {
             @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
             @Override public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {}
             @Override public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("Multiplayer", "Erreur lors de l'écoute des coups", error.toException());
+                Log.e("Differe", "Erreur lors de l'écoute des coups", error.toException());
             }
         });
     }
@@ -472,38 +499,17 @@ public class MultiplayerGameMode implements GameMode {
                     if (dialogCallback != null) {
                         dialogCallback.show(textpop,eloChange);
                     } else {
-                        Log.e("MultiplayerGameMode", "DialogCallback is null");
+                        Log.e("DiffereGameMode", "DialogCallback is null");
                     }
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("Multiplayer", "Erreur écoute gameOver", error.toException());
+                Log.e("Differe", "Erreur écoute gameOver", error.toException());
             }
         });
     }
-
-    public void startListeningForAbandon(String currentUserId) {
-        gamesRef.child(gameId).child("abandon").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String quitterId = snapshot.getValue(String.class);
-
-                if (quitterId != null && !quitterId.equals(currentUserId)) {
-                    // L'autre joueur a abandonné => on gagne
-                    Log.d("Multiplayer", "L'autre joueur a abandonné !");
-                    onGameOver(currentUserId, quitterId, "Victoire par abandon");
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("Multiplayer", "Erreur écoute abandon", error.toException());
-            }
-        });
-    }
-
 
     public interface OnTurnCheckListener {
         void onCheck(boolean isMyTurn);

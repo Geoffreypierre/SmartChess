@@ -3,13 +3,17 @@ package com.example.smartchess.matchmaking;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.*;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class Matchmaker implements  MatchmakerInterface {
+public class MatchmakerDiffere implements MatchmakerInterface {
     private final DatabaseReference waitingRef;
     private final DatabaseReference gamesRef;
     private final String myUid;
@@ -17,12 +21,12 @@ public class Matchmaker implements  MatchmakerInterface {
     private final String myColor; // "white", "black" ou "any"
     private String gameId;
 
-    public Matchmaker(String uid,long elo, String color) {
+    public MatchmakerDiffere(String uid, long elo, String color) {
         this.myUid =uid;
         this.myElo = elo;
         this.myColor = color;
-        this.waitingRef = FirebaseDatabase.getInstance().getReference("matchmaking/waiting");
-        this.gamesRef = FirebaseDatabase.getInstance().getReference("games");
+        this.waitingRef = FirebaseDatabase.getInstance().getReference("matchmakingDiffere/waiting");
+        this.gamesRef = FirebaseDatabase.getInstance().getReference("differedGames");
     }
 
     public void enterQueue() {

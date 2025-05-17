@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.smartchess.R;
 import com.example.smartchess.auth.UserSession;
+import com.example.smartchess.chess.gamemodes.DiffereGameMode;
 import com.example.smartchess.services.chat.ChatAdapter;
 import com.example.smartchess.services.chat.ChatMessage;
 import com.example.smartchess.chess.chessboard.ChessBoardView;
@@ -112,6 +113,28 @@ public class ChessGameActivity extends AppCompatActivity {
                 playerBlackId = intent.getStringExtra("playerBlackId");
 
                 mode = new MultiplayerGameMode(multi_game_id, multi_player_color);
+
+                if (multi_player_color.equals("white")) {
+                    loadPlayerInfo(playerBlackId, true);
+                    loadPlayerInfo(playerWhiteId, false);
+                } else {
+                    loadPlayerInfo(playerWhiteId, true);
+                    loadPlayerInfo(playerBlackId, false);
+                }
+
+                ((MultiplayerGameMode) mode).startListeningForAbandon(currentUserId); // si on quitte on abandone
+
+
+                chatRef = FirebaseDatabase.getInstance().getReference("chats").child(multi_game_id);
+                setupChatListener();
+            }
+            else if (gameModeString.equals("differe")) {
+                multi_game_id = intent.getStringExtra("game_id");
+                multi_player_color = intent.getStringExtra("player_color");
+                playerWhiteId = intent.getStringExtra("playerWhiteId");
+                playerBlackId = intent.getStringExtra("playerBlackId");
+
+                mode = new DiffereGameMode(multi_game_id, multi_player_color);
 
                 if (multi_player_color.equals("white")) {
                     loadPlayerInfo(playerBlackId, true);
@@ -295,7 +318,10 @@ public class ChessGameActivity extends AppCompatActivity {
             }
 
             Log.w("ChessGame", "App fermée ou quittée sans fin de partie → abandon");
-            mode.onGameOver(null, currentUserId, "Abandon");
+            if (mode instanceof MultiplayerGameMode) {
+                System.out.println("Abandon de la partie, femeture app");
+                mode.onGameOver(null, currentUserId, "Abandon");
+            }
 
             if (chatRef != null) {
                 chatRef.removeValue();

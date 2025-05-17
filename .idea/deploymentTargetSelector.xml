@@ -15,7 +15,7 @@
       </SelectionState>
       <SelectionState runConfigName="SmartChess">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-13T15:25:44.864455102Z">
+        <DropdownSelection timestamp="2025-05-16T22:20:22.802766421Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CWB0JZXHV" />

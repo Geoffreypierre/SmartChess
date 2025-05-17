@@ -8,7 +8,10 @@ import com.example.smartchess.chess.chessboard.pieces.Piece;
 import com.example.smartchess.chess.chessboard.pieces.Queen;
 import com.example.smartchess.chess.chessboard.pieces.Rook;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class ChessGame {
@@ -371,4 +374,112 @@ public class ChessGame {
          */
         void onPieceCaptured(Piece capturedPiece, boolean capturedByWhite);
     }
+
+    public List<List<Map<String, String>>> serializeBoard() {
+        List<List<Map<String, String>>> boardState = new ArrayList<>();
+
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            List<Map<String, String>> rowList = new ArrayList<>();
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                Piece piece = board[row][col];
+                Map<String, String> cell = new HashMap<>();
+                if (piece != null) {
+                    cell.put("type", piece.getClass().getSimpleName());
+                    cell.put("color", piece.getColor().toString());
+                } else {
+                    cell.put("type", "EMPTY");
+                    cell.put("color", "NONE");
+                }
+                rowList.add(cell);
+            }
+            boardState.add(rowList);
+        }
+
+        return boardState;
+    }
+
+    public void loadBoardFromState(List<List<Map<String, String>>> savedState) {
+        board = new Piece[BOARD_SIZE][BOARD_SIZE];
+
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                Map<String, String> cell = savedState.get(row).get(col);
+                String type = cell.get("type");
+                String colorStr = cell.get("color");
+
+                if (type == null || "EMPTY".equals(type)) {
+                    board[row][col] = null;
+                    continue;
+                }
+
+                Piece.Color color = Piece.Color.valueOf(colorStr);
+
+                switch (type) {
+                    case "Pawn":
+                        board[row][col] = new Pawn(color);
+                        break;
+                    case "Rook":
+                        board[row][col] = new Rook(color);
+                        break;
+                    case "Knight":
+                        board[row][col] = new Knight(color);
+                        break;
+                    case "Bishop":
+                        board[row][col] = new Bishop(color);
+                        break;
+                    case "Queen":
+                        board[row][col] = new Queen(color);
+                        break;
+                    case "King":
+                        board[row][col] = new King(color);
+                        break;
+                    default:
+                        board[row][col] = null;
+                        break;
+                }
+            }
+        }
+    }
+
+    public Map<String, Object> serializeFullState() {
+        Map<String, Object> state = new HashMap<>();
+
+        // Plateau de jeu
+        List<List<Map<String, String>>> boardState = serializeBoard();
+        state.put("board", boardState);
+
+        // En passant
+        if (enPassantSquare != null) {
+            Map<String, Integer> enPassant = new HashMap<>();
+            enPassant.put("row", enPassantSquare.getRow());
+            enPassant.put("col", enPassantSquare.getCol());
+            state.put("enPassant", enPassant);
+        } else {
+            state.put("enPassant", null);
+        }
+
+        return state;
+    }
+
+    public void loadFullState(Map<String, Object> savedState) {
+        // Charger le plateau
+        List<List<Map<String, String>>> boardState = (List<List<Map<String, String>>>) savedState.get("board");
+        loadBoardFromState(boardState);
+
+        // Charger en passant
+        Object enPassantObj = savedState.get("enPassant");
+        if (enPassantObj instanceof Map) {
+            Map<String, Long> enPassantMap = (Map<String, Long>) enPassantObj;
+            int row = enPassantMap.get("row").intValue();
+            int col = enPassantMap.get("col").intValue();
+            enPassantSquare = new Position(row, col);
+        } else {
+            enPassantSquare = null;
+        }
+
+    }
+
+
+
+
 }
