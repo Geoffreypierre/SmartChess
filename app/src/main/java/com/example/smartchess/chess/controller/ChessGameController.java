@@ -26,7 +26,6 @@ public class ChessGameController {
     private PlayerInfoView playerInfoViewBlack;
     private PlayerInfoView playerInfoViewWhite;
 
-    // Variables pour gérer la sélection de pièces.
     private int selectedRow = -1;
     private int selectedCol = -1;
 
@@ -50,8 +49,6 @@ public class ChessGameController {
             mode.onMoveValidated(finalMove, game, view, playerInfoViewWhite, playerInfoViewBlack);
         });
 
-        //init ; multi = écouter les coups joués
-
         this.gameMode.setDialogCallback(dialogCallback);
         this.gameMode.initGame(this.chessGame, this.boardView);
     }
@@ -73,10 +70,6 @@ public class ChessGameController {
             }
 
         } else {
-            // Deuxième sélection : tenter de déplacer la pièce sélectionnée.
-
-
-
             gameMode.beforeMovePiece(chessGame);
             if(chessGame.getPiece(selectedRow, selectedCol) == null) {
                 return;

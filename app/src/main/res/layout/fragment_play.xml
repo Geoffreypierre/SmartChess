@@ -22,13 +22,13 @@
             android:layout_height="wrap_content"
             android:text="Jouer"
             android:textColor="#FFFFFF"
-            android:textSize="40sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
 
         <ImageView
             android:id="@+id/icon_rook"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginStart="20dp"
             android:contentDescription="Icône Tour"
             android:src="@drawable/ic_game_home_tittle" />

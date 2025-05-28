@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1E1E2E">
+    android:background="#1E1E2E"
+    android:padding="0dp"
+    android:layout_margin="0dp">
 
     <TextView
         android:layout_gravity="center_horizontal"
@@ -19,7 +21,8 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewChat"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:padding="8dp"
         android:scrollbars="vertical"
         android:fadeScrollbars="false"
@@ -31,7 +34,9 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="12dp"
-        android:background="#252433">
+        android:background="#252433"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp">
 
         <EditText
             android:id="@+id/editTextMessage"

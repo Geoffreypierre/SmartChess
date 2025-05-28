@@ -25,6 +25,7 @@ public class ProfileFragment extends Fragment {
     private TextView txtEloValue;
     private TextView txtRankValue;
     private ImageView imgProfile;
+    private ImageView imgTrophy;
 
     private UserSession userSession;
     private FirebaseAuth mAuth;
@@ -49,30 +50,25 @@ public class ProfileFragment extends Fragment {
         txtEloValue = view.findViewById(R.id.txt_elo_value);
         txtRankValue = view.findViewById(R.id.txt_rank_value);
         imgProfile = view.findViewById(R.id.img_profile);
+        imgTrophy = view.findViewById(R.id.img_trophy);
     }
 
-    /**
-     * Charge les données du profil utilisateur depuis la session et Firebase Auth
-     */
     private void loadProfileData() {
         try {
-            // Récupérer les informations stockées dans la session
             String username = userSession.getUsername();
             int elo = userSession.getElo();
             String profilePicture = userSession.getProfilePicture();
 
-            // Récupérer l'email depuis Firebase Auth
             FirebaseUser currentUser = mAuth.getCurrentUser();
             String email = currentUser != null ? currentUser.getEmail() : "Non disponible";
 
-            // Déterminer le niveau en fonction de l'ELO
-            String niveau = determineLevel(elo);
+            RankInfo rankInfo = determineRank(elo);
 
-            // Mettre à jour l'interface
             txtUsername.setText(username);
             txtEmailValue.setText(email);
             txtEloValue.setText(String.valueOf(elo));
-            txtRankValue.setText(niveau);
+            txtRankValue.setText(rankInfo.rankName);
+            imgTrophy.setImageResource(rankInfo.rankIcon);
 
             if (profilePicture != null && !profilePicture.isEmpty()) {
                 Picasso.get()
@@ -90,15 +86,33 @@ public class ProfileFragment extends Fragment {
     }
 
     /**
-     * Détermine le niveau du joueur en fonction de son score ELO
+     * - Bronze : 0-1199
+     * - Argent : 1200-1499
+     * - Or : 1500-1799
+     * - Platine : 1800-2099
+     * - Diamant : 2100+
      */
-    private String determineLevel(int elo) {
-        if (elo < 1400) {
-            return "Débutant";
-        } else if (elo < 1700) {
-            return "Intermédiaire";
+    private RankInfo determineRank(int elo) {
+        if (elo < 1200) {
+            return new RankInfo("Bronze", R.drawable.rank_bronze);
+        } else if (elo < 1500) {
+            return new RankInfo("Argent", R.drawable.rank_silver);
+        } else if (elo < 1800) {
+            return new RankInfo("Or", R.drawable.rank_gold);
+        } else if (elo < 2100) {
+            return new RankInfo("Platine", R.drawable.rank_platine);
         } else {
-            return "Avancé";
+            return new RankInfo("Diamant", R.drawable.rank_diamond);
+        }
+    }
+
+    private static class RankInfo {
+        public final String rankName;
+        public final int rankIcon;
+
+        public RankInfo(String rankName, int rankIcon) {
+            this.rankName = rankName;
+            this.rankIcon = rankIcon;
         }
     }
 }

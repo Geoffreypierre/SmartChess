@@ -47,14 +47,38 @@ public class DiffereGameMode implements GameMode {
     }
 
     @Override
+    public void initGame(ChessGame game, ChessBoardView view) {
+        if(playerColor.equals("black")) {
+            game.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
+            view.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
+        }
+        startListeningForMoves(game, view);
+        startListeningForGameOver(game);
+        gamesRef.child(gameId).child("boardState").get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                Map<String, Object> fullState = (Map<String, Object>) snapshot.getValue();
+                game.loadFullState(fullState);
+                System.out.println("État du plateau restauré !");
+
+                getCurrentTurn(turn -> {
+                    game.setWhiteTurn(turn.equals("white"));
+                });
+                view.invalidate();
+
+            } else {
+                System.out.println("Aucun état de plateau trouvé. Utilisation de l'état initial.");
+            }
+        }).addOnFailureListener(e -> {
+            Log.e("DiffereGameMode", "Erreur lors de la récupération du plateau", e);
+        });
+    }
+
+    @Override
     public void onMoveValidated(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
         System.out.println("Move validated: " + move.getToRow() + ", " + move.getToCol());
         gamesRef.child(gameId).child("moves").push().setValue(move)
                 .addOnSuccessListener(unused -> Log.d("Matchmaker", "Coup envoyé avec succès !"))
                 .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors de l'envoi du coup", e));
-
-        //enregistrer l'état final du plateau
-
         Map<String, Object> state = game.serializeFullState();
         gamesRef.child(gameId).child("boardState").setValue(state);
 
@@ -102,7 +126,7 @@ public class DiffereGameMode implements GameMode {
                 if (winner != null && winner.equals("White")){
                     partie.setWinnerId(playerWhite);
                 }
-                else if ( winner != null && winner.equals("Black")){
+                else if (winner != null && winner.equals("Black")){
                     partie.setWinnerId(playerBlack);
                 }
                 else{
@@ -301,44 +325,6 @@ public class DiffereGameMode implements GameMode {
     @Override
     public void setDialogCallback(ChessGameController.GameOverDialogCallback callback) {
         this.dialogCallback = callback;
-    }
-
-
-    @Override
-    public void initGame(ChessGame game, ChessBoardView view) {
-        if(playerColor.equals("black")) {
-            game.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
-            view.setBoardOrientation(ChessGame.BoardOrientation.BLACK);
-        }
-
-        startListeningForMoves(game, view);
-        startListeningForGameOver(game);
-
-        // Récupérer l'état du plateau depuis Firebase
-
-        gamesRef.child(gameId).child("boardState").get().addOnSuccessListener(snapshot -> {
-            if (snapshot.exists()) {
-                Map<String, Object> fullState = (Map<String, Object>) snapshot.getValue();
-                game.loadFullState(fullState);
-                System.out.println("État du plateau restauré !");
-
-                // recuperer le tour
-                getCurrentTurn(turn -> {
-                    game.setWhiteTurn(turn.equals("white"));
-                });
-
-
-                view.invalidate(); // Redessiner le plateau avec le bon état
-
-            } else {
-                System.out.println("Aucun état de plateau trouvé. Utilisation de l'état initial.");
-            }
-        }).addOnFailureListener(e -> {
-            Log.e("DiffereGameMode", "Erreur lors de la récupération du plateau", e);
-        });
-
-
-
     }
 
     public void validateMove(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {

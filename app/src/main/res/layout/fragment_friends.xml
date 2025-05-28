@@ -22,14 +22,14 @@
             android:layout_height="wrap_content"
             android:text="Amis"
             android:textColor="#FFFFFF"
-            android:textSize="40sp"
+            android:textSize="32sp"
             android:textStyle="bold"
             android:layout_marginEnd="8dp" />
 
         <ImageView
             android:id="@+id/friends_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginStart="20dp"
             android:src="@drawable/tittle_friends"
             android:contentDescription="Icône amis" />
@@ -89,17 +89,19 @@
                 android:textColorHint="#80FFFFFF"
                 android:textSize="16sp" />
 
-        </LinearLayout>
+        </LinearLayout>-
     </androidx.cardview.widget.CardView>
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/search_button"
         android:background="@drawable/button_search_background"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="42dp"
         android:layout_marginTop="30dp"
         android:text="Chercher"
+        android:textAllCaps="false"
         android:textColor="#FFFFFF"
+        android:textSize="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/search_card" />

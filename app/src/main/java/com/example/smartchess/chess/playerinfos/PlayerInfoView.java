@@ -82,7 +82,6 @@ public class PlayerInfoView extends LinearLayout {
         capturedPieces.add(piece);
         ImageView pieceImageView = new ImageView(getContext());
         pieceImageView.setImageResource(piece.getImageResId());
-        //image size
         pieceImageView.setLayoutParams(new LayoutParams(50, 50));
         capturedPiecesLayout.addView(pieceImageView);
     }
@@ -126,9 +125,9 @@ public class PlayerInfoView extends LinearLayout {
 
         Glide.with(getContext())
                 .load(imageUrl)
-                .placeholder(R.drawable.profile_picture_placeholder) // image par défaut pendant le chargement
-                .error(R.drawable.profile_picture_placeholder)         // image en cas d’erreur
-                .circleCrop()                           // pour un affichage circulaire si tu veux
+                .placeholder(R.drawable.profile_picture_placeholder)
+                .error(R.drawable.profile_picture_placeholder)
+                .circleCrop()
                 .into(profileImageView);
     }
 

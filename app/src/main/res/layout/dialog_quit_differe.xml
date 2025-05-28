@@ -17,18 +17,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Quitter la partie"
+            android:text="Terminer la partie"
             android:textColor="#F65254"
             android:textSize="28sp"
             android:textStyle="bold"
             android:layout_marginBottom="24dp" />
 
         <TextView
-            android:id="@+id/quit_dialog_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Cela va supprimer la partie en cours\nvoulez-vous continuer ?"
+            android:text="Vous allez terminer définitivement cette partie différée.\nElle passera au statut 'Terminée'.\nVoulez-vous continuer ?"
             android:textColor="#000000"
             android:textSize="18sp"
             android:lineSpacingExtra="4dp"
@@ -42,7 +41,7 @@
             android:weightSum="2">
 
             <Button
-                android:id="@+id/btn_quitter_local_game"
+                android:id="@+id/btn_quit_differe"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.8"
@@ -55,7 +54,7 @@
                 android:padding="12dp" />
 
             <Button
-                android:id="@+id/btn_annuler_local_game"
+                android:id="@+id/btn_cancel_differe"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.8"

@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="#1E1E2D">
 
-    <!-- Title -->
     <TextView
         android:id="@+id/title"
         android:layout_width="match_parent"
@@ -14,10 +13,9 @@
         android:text="SmartChess"
         android:gravity="center"
         android:textColor="#FFFFFF"
-        android:textSize="50sp"
+        android:textSize="42sp"
         android:textStyle="bold" />
 
-    <!-- Logo -->
     <ImageView
         android:id="@+id/logo"
         android:layout_width="107dp"
@@ -28,7 +26,6 @@
         android:src="@drawable/home"
         android:contentDescription="Logo" />
 
-    <!-- Connexion Button -->
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnConnexion"
         android:layout_width="wrap_content"
@@ -44,7 +41,6 @@
         android:textAllCaps="false"
         android:textStyle="bold" />
 
-    <!-- Inscription Button -->
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnInscription"
         android:layout_width="wrap_content"

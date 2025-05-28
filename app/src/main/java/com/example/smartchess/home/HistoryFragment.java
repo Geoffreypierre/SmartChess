@@ -29,6 +29,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,77 +90,151 @@ public class HistoryFragment extends Fragment {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<GameHistoryItem> ongoingGames = new ArrayList<>();
 
-                    if (queryDocumentSnapshots.isEmpty()) {
-                        ongoingGamesAdapter.updateData(ongoingGames);
-                        updatePlaceholderVisibility();
-                        return;
-                    }
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        AtomicInteger totalGamesToProcess = new AtomicInteger(0);
+                        AtomicInteger processedGames = new AtomicInteger(0);
 
-                    AtomicInteger totalGamesToProcess = new AtomicInteger(0);
-                    AtomicInteger processedGames = new AtomicInteger(0);
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            try {
+                                String id = document.getId();
+                                String playerId = document.getString("playerId");
+                                String player1Id = document.getString("player1Id");
+                                String player2Id = document.getString("player2Id");
+                                String result = document.getString("result");
+                                String winnerId = document.getString("winnerId");
+                                Object timestamp = document.get("timestamp");
+                                List<String> moves = (List<String>) document.get("moves");
+                                Object duration = document.get("duration");
+                                String gameMode = document.getString("gameMode");
 
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        try {
-                            String id = document.getId();
-                            String playerId = document.getString("playerId");
-                            String player1Id = document.getString("player1Id");
-                            String player2Id = document.getString("player2Id");
-                            String result = document.getString("result");
-                            String winnerId = document.getString("winnerId");
-                            Object timestamp = document.get("timestamp");
-                            List<String> moves = (List<String>) document.get("moves");
-                            Object duration = document.get("duration");
+                                GameHistoryItem item = new GameHistoryItem();
+                                item.setGameId(id);
 
-                            GameHistoryItem item = new GameHistoryItem();
-                            item.setGameId(id);
-
-                            if (playerId == null && player1Id != null) {
-                                item.setPlayerId(player1Id);
-                            } else {
-                                item.setPlayerId(playerId);
-                            }
-
-                            item.setPlayer2Id(player2Id);
-                            item.setResult(result);
-                            item.setWinnerId(winnerId);
-                            item.setTimestamp(timestamp);
-                            item.setMoves(moves);
-                            item.setDuration(duration);
-
-                            String effectivePlayerId = (playerId != null) ? playerId : player1Id;
-                            if (currentUserId.equals(effectivePlayerId) ||
-                                    currentUserId.equals(player2Id)) {
-                                totalGamesToProcess.incrementAndGet();
-                                ongoingGames.add(item);
-                                Log.d(TAG, "Added ongoing game: " + id + " between players " +
-                                        effectivePlayerId + " and " + player2Id);
-                            }
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error processing ongoing game document", e);
-                        }
-                    }
-
-                    if (totalGamesToProcess.get() == 0) {
-                        ongoingGamesAdapter.updateData(ongoingGames);
-                        updatePlaceholderVisibility();
-                        return;
-                    }
-
-                    for (GameHistoryItem game : ongoingGames) {
-                        getUserData(game.getPlayerId(), () -> {
-                            getUserData(game.getPlayer2Id(), () -> {
-                                if (processedGames.incrementAndGet() == totalGamesToProcess.get()) {
-                                    ongoingGamesAdapter.updateData(ongoingGames);
-                                    updatePlaceholderVisibility();
+                                if (playerId == null && player1Id != null) {
+                                    item.setPlayerId(player1Id);
+                                } else {
+                                    item.setPlayerId(playerId);
                                 }
-                            });
-                        });
+
+                                item.setPlayer2Id(player2Id);
+                                item.setResult(result);
+                                item.setWinnerId(winnerId);
+                                item.setTimestamp(timestamp);
+                                item.setMoves(moves);
+                                item.setDuration(duration);
+                                item.setGameMode(gameMode != null ? gameMode : "multiplayer");
+
+                                String effectivePlayerId = (playerId != null) ? playerId : player1Id;
+                                if (currentUserId.equals(effectivePlayerId) ||
+                                        currentUserId.equals(player2Id)) {
+                                    totalGamesToProcess.incrementAndGet();
+                                    ongoingGames.add(item);
+                                    Log.d(TAG, "Added ongoing game: " + id + " between players " +
+                                            effectivePlayerId + " and " + player2Id);
+                                }
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error processing ongoing game document", e);
+                            }
+                        }
+
+                        if (totalGamesToProcess.get() > 0) {
+                            for (GameHistoryItem game : ongoingGames) {
+                                getUserData(game.getPlayerId(), () -> {
+                                    getUserData(game.getPlayer2Id(), () -> {
+                                        if (processedGames.incrementAndGet() == totalGamesToProcess.get()) {
+                                            loadDeferredGames(ongoingGames);
+                                        }
+                                    });
+                                });
+                            }
+                        } else {
+                            loadDeferredGames(ongoingGames);
+                        }
+                    } else {
+                        loadDeferredGames(ongoingGames);
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading ongoing games", e);
-                    updatePlaceholderVisibility();
+                    loadDeferredGames(new ArrayList<>());
                 });
+
+        loadCompletedGames();
+    }
+
+    private void loadDeferredGames(List<GameHistoryItem> ongoingGames) {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+
+        database.child("differedGames").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (!dataSnapshot.exists()) {
+                    Log.e("QUERY", "EMPTYYYYYYYYYYYYYYYY");
+                    ongoingGamesAdapter.updateData(ongoingGames);
+                    updatePlaceholderVisibility();
+                    return;
+                }
+
+                AtomicInteger totalDeferredGamesToProcess = new AtomicInteger(0);
+                AtomicInteger processedDeferredGames = new AtomicInteger(0);
+
+                for (DataSnapshot gameSnapshot : dataSnapshot.getChildren()) {
+                    try {
+                        String id = gameSnapshot.getKey();
+                        String playerWhite = gameSnapshot.child("playerWhite").getValue(String.class);
+                        String playerBlack = gameSnapshot.child("playerBlack").getValue(String.class);
+                        String status = gameSnapshot.child("status").getValue(String.class);
+                        Object createdAt = gameSnapshot.child("createdAt").getValue();
+
+                        if (currentUserId.equals(playerWhite) || currentUserId.equals(playerBlack)) {
+                            GameHistoryItem item = new GameHistoryItem();
+                            item.setGameId(id);
+                            item.setPlayerId(playerWhite);
+                            item.setPlayer2Id(playerBlack);
+                            item.setResult("En cours");
+                            item.setTimestamp(createdAt);
+                            item.setGameMode("differe");
+
+                            totalDeferredGamesToProcess.incrementAndGet();
+                            ongoingGames.add(item);
+                            Log.d(TAG, "Added deferred game: " + id + " between players " +
+                                    playerWhite + " and " + playerBlack + " (status: " + status + ")");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error processing deferred game document", e);
+                    }
+                }
+
+                if (totalDeferredGamesToProcess.get() > 0) {
+                    for (GameHistoryItem game : ongoingGames) {
+                        if ("differe".equals(game.getGameMode())) {
+                            getUserData(game.getPlayerId(), () -> {
+                                getUserData(game.getPlayer2Id(), () -> {
+                                    if (processedDeferredGames.incrementAndGet() == totalDeferredGamesToProcess.get()) {
+                                        ongoingGamesAdapter.updateData(ongoingGames);
+                                        updatePlaceholderVisibility();
+                                    }
+                                });
+                            });
+                        }
+                    }
+                } else {
+                    ongoingGamesAdapter.updateData(ongoingGames);
+                    updatePlaceholderVisibility();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.e(TAG, "Error loading deferred games", databaseError.toException());
+                ongoingGamesAdapter.updateData(ongoingGames);
+                updatePlaceholderVisibility();
+            }
+        });
+    }
+
+    private void loadCompletedGames() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("HistoriquePartie")
                 .whereNotEqualTo("result", "En cours")
@@ -416,7 +495,10 @@ public class HistoryFragment extends Fragment {
 
                 btnResume.setOnClickListener(v -> {
                     Intent intent = new Intent(getContext(), ChessGameActivity.class);
-                    intent.putExtra("game_mode", "multiplayer");
+
+                    String gameMode = game.getGameMode() != null ? game.getGameMode() : "multiplayer";
+
+                    intent.putExtra("game_mode", gameMode);
                     intent.putExtra("game_id", game.getGameId());
                     intent.putExtra("player_color", playerColor);
                     intent.putExtra("playerWhiteId", game.getPlayerId());
@@ -425,6 +507,14 @@ public class HistoryFragment extends Fragment {
                 });
             }
         }
+        private String determineGameMode(GameHistoryItem game) {
+            if (game.getGameId().contains("differe")) {
+                return "differe";
+            } else {
+                return "multiplayer";
+            }
+        }
+
     }
 
     private class CompletedGamesAdapter extends RecyclerView.Adapter<CompletedGamesAdapter.CompletedGameViewHolder> {
@@ -590,6 +680,7 @@ public class HistoryFragment extends Fragment {
                             if (getContext() != null) {
                                 Glide.with(getContext())
                                         .load(uri)
+                                        .centerCrop()  // Ajouté pour le mode cover
                                         .error(R.drawable.profile_picture_placeholder)
                                         .into(imageView);
                                 Log.d(TAG, "Image loaded successfully from: " + uri);
@@ -611,6 +702,7 @@ public class HistoryFragment extends Fragment {
                 if (getContext() != null) {
                     Glide.with(getContext())
                             .load(avatarUrl)
+                            .centerCrop()
                             .error(R.drawable.profile_picture_placeholder)
                             .into(imageView);
                     Log.d(TAG, "Loading http image: " + avatarUrl);
@@ -649,8 +741,17 @@ public class HistoryFragment extends Fragment {
         private Object timestamp;
         private List<String> moves;
         private Object duration;
+        private String gameMode;
 
         public GameHistoryItem() {
+        }
+
+        public String getGameMode() {
+            return gameMode;
+        }
+
+        public void setGameMode(String gameMode) {
+            this.gameMode = gameMode;
         }
 
         public String getGameId() {

@@ -21,6 +21,9 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_user"
+            android:background="@drawable/rounded_image_background"
+            android:clipToOutline="true"
+            android:scaleType="centerCrop"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -42,10 +45,12 @@
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/challenge_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/btn_connexion"
+            android:layout_width="73dp"
+            android:layout_height="38dp"
+            android:background="@drawable/defi_item"
             android:text="Défier"
+            android:textAllCaps="false"
+            android:textSize="16dp"
             android:textColor="#FFFFFF"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

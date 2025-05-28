@@ -126,8 +126,8 @@ public class ChessBoardView extends View {
                             selectedRow, selectedCol, chessGame.getBoard(), chessGame.getEnPassantSquare());
 
                     Paint highlightPaint = new Paint();
-                    highlightPaint.setColor(Color.YELLOW);
-                    highlightPaint.setAlpha(100);
+                    highlightPaint.setColor(0x05FBFF0D);
+                    highlightPaint.setAlpha(10);
 
                     for (Position move : availableMoves) {
                         int moveRow = (boardOrientation == ChessGame.BoardOrientation.WHITE) ? move.getRow() : 7 - move.getRow();

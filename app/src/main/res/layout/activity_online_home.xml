@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:text="Partie en ligne"
             android:textColor="#FFFFFF"
-            android:textSize="40sp"
+            android:textSize="32sp"
             android:textStyle="bold" />
         
     </LinearLayout>

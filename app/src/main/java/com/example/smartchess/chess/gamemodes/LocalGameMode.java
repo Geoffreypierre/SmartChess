@@ -16,11 +16,7 @@ public class LocalGameMode implements GameMode {
 
     @Override
     public void onMoveValidated(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
-        // Rafraîchir la vue après un coup joué.
-        System.out.println("Move validated: " + move.getToRow() + ", " + move.getToCol());
         view.invalidate();
-
-        // Changer le tour
         onTurnChanged(game.isWhiteTurn(), game, view, playerInfoViewWhite, playerInfoViewBlack);
     }
 
@@ -89,12 +85,16 @@ public class LocalGameMode implements GameMode {
     }
 
     @Override
-    public void onGameOver(String winner,String loser, String description) {
-
+    public void onGameOver(String winner, String loser, String description) {
         if (dialogCallback != null) {
-            dialogCallback.show("Fin","");
+            String winnerText;
+            if (winner != null) {
+                winnerText = "Victoire des " + winner + " par " + description;
+            } else {
+                winnerText = "Match nul !";
+            }
+            dialogCallback.show(winnerText, "");
         }
-
     }
 
     @Override
@@ -105,6 +105,5 @@ public class LocalGameMode implements GameMode {
     @Override
     public void setDialogCallback(ChessGameController.GameOverDialogCallback callback) {
         this.dialogCallback = callback;
-
     }
 }
