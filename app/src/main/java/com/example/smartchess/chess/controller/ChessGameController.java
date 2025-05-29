@@ -63,6 +63,7 @@ public class ChessGameController {
         // Première sélection : sélectionner la pièce à jouer.
         System.out.println("Cell touched: " + row + ", " + col);
         if (selectedRow == -1 && selectedCol == -1) {
+            System.out.println("premiere selection");
             if (chessGame.getPiece(row, col) != null) {
                 selectedRow = row;
                 selectedCol = col;
@@ -70,11 +71,19 @@ public class ChessGameController {
             }
 
         } else {
+            System.out.println("seconde selection");
             gameMode.beforeMovePiece(chessGame);
+            System.out.println(selectedCol + " " + selectedCol + " " + row + " " + col);
             if(chessGame.getPiece(selectedRow, selectedCol) == null) {
+                System.out.println("premier IF");
+                selectedRow = -1;
+                selectedCol = -1;
                 return;
             }
             if (chessGame.getPiece(selectedRow, selectedCol).getColor() == null) {
+                System.out.println("Second IF");
+                selectedRow = -1;
+                selectedCol = -1;
                 return;
             }
             Move move = new Move(selectedRow, selectedCol, row, col,chessGame.getPiece(selectedRow,selectedCol).getColor().equals(Piece.Color.BLACK) ? "black" : "white", chessGame.getPiece(selectedRow, selectedCol).toString());

@@ -347,7 +347,7 @@ public class ChessGame {
             } else {
                 System.out.println("PAT");
                 if (gameOverCallback != null) {
-                    gameOverCallback.onGameOver(null, null, "Draw");
+                    gameOverCallback.onGameOver(null, null, "Partie nulle par pat");
                 }
             }
         }

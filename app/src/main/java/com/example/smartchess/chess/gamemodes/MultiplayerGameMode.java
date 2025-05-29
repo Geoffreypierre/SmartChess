@@ -125,7 +125,7 @@ public class MultiplayerGameMode implements GameMode {
                 if (dialogCallback != null) {
 
                     if(partie.getWinnerId() == null){
-                        String textpop = "Match nul\n"+description;
+                        String textpop = "Partie nulle\n"+description;
                         String eloChange = "+0 Elo";
 
                         GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
@@ -311,10 +311,11 @@ public class MultiplayerGameMode implements GameMode {
         //recuperer mon id
 
 
-        gamesRef.child(gameId).child("abandon").onDisconnect().setValue(playerColor);
+        gamesRef.child(gameId).child("disconect").onDisconnect().setValue(playerColor);
     }
 
     public void validateMove(Move move, ChessGame game, ChessBoardView view, PlayerInfoView playerInfoViewWhite, PlayerInfoView playerInfoViewBlack) {
+        System.out.println("Validate MOOOVE");
         if (view.isAnimating() || processingMove) {
             return;
         }
@@ -330,6 +331,7 @@ public class MultiplayerGameMode implements GameMode {
                 return;
             }
 
+            System.out.println("AVANT VERIF COUP");
             boolean moveOk = game.canMovePiece(move.getFromRow(), move.getFromCol(), move.getToRow(), move.getToCol());
             if (moveOk) {
                 processingMove = true;
@@ -466,11 +468,21 @@ public class MultiplayerGameMode implements GameMode {
                 GameOverInfo gameOverInfo = snapshot.getValue(GameOverInfo.class);
                 if (gameOverInfo != null) {
 
+                    System.out.println("debut start listening game over");
+
+                    gamesRef.child(gameId).child("disconect").onDisconnect().cancel();
+
                     String textpop = gameOverInfo.getText();
                     String eloChange = gameOverInfo.getElochange();
 
                     if (dialogCallback != null) {
                         dialogCallback.show(textpop,eloChange);
+
+                        //supprimer la gemeoverinfo de firebase
+
+                        gamesRef.child(gameId).removeValue()
+                                .addOnSuccessListener(unused2 -> Log.d("Matchmaker", "Partie supprimée"))
+                                .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur suppression", e));
                     } else {
                         Log.e("MultiplayerGameMode", "DialogCallback is null");
                     }
@@ -485,7 +497,7 @@ public class MultiplayerGameMode implements GameMode {
     }
 
     public void startListeningForAbandon(String currentUserId) {
-        gamesRef.child(gameId).child("abandon").addValueEventListener(new ValueEventListener() {
+        gamesRef.child(gameId).child("disconect").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String quitterId = snapshot.getValue(String.class);
