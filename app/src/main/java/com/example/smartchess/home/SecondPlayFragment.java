@@ -105,17 +105,24 @@ public class SecondPlayFragment extends Fragment {
                             String black = snapshot.child("playerBlack").getValue(String.class);
 
                             if (userId.equals(white) || userId.equals(black)) {
-                                String gameId = snapshot.getKey();
 
-                                // PARTIE LANCEE
-                                System.out.println("PARTIE TROUVEE " + gameId);
+                                if(snapshot.child("moves").getValue() == null){
+                                    System.out.println("Partie trouvée mais pas encore commencée : " + snapshot.getKey());
 
-                                //quitter l'écran de matchmaking qui s'est ouvert par dessus
+                                    String gameId = snapshot.getKey();
 
-                                // Ferme MatchmakingActivity si elle est active
-                                if (getActivity() instanceof MatchmakingActivity) {
-                                    getActivity().finish();
+                                    // PARTIE LANCEE
+                                    System.out.println("PARTIE TROUVEE " + gameId);
+
+                                    //quitter l'écran de matchmaking qui s'est ouvert par dessus
+
+                                    // Ferme MatchmakingActivity si elle est active
+                                    if (getActivity() instanceof MatchmakingActivity) {
+                                        getActivity().finish();
+                                    }
                                 }
+
+
 
                             }
                         }

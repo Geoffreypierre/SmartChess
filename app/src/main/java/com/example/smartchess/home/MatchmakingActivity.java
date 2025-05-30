@@ -55,6 +55,7 @@
 
             System.out.println("AVANT 11111");
 
+
             checkExistingGame(userId, gamesRef, existingGame -> {
                 System.out.println("checkExistingGame : " + existingGame);
                 if (existingGame != null) {
@@ -93,9 +94,15 @@
                             String white = child.child("playerWhite").getValue(String.class);
                             String black = child.child("playerBlack").getValue(String.class);
 
+
+
                             if (userId.equals(white) || userId.equals(black)) {
-                                callback.onGameFound(child);
-                                return;
+
+                                if(child.child("moves").getValue() == null){
+                                    System.out.println("Partie trouvée mais pas encore commencée : " + child.getKey());
+                                    callback.onGameFound(child);
+                                    return;
+                                }
                             }
                         }
                         callback.onGameFound(null); // Aucune partie trouvée
@@ -133,18 +140,24 @@
                             String black = snapshot.child("playerBlack").getValue(String.class);
 
                             if (userId.equals(white) || userId.equals(black)) {
-                                String gameId = snapshot.getKey();
-                                System.out.println("Partie trouvée après matchmaking !");
 
-                                Intent intent = new Intent(MatchmakingActivity.this, ChessGameActivity.class);
-                                intent.putExtra("game_mode", mode);
-                                intent.putExtra("game_id", gameId);
-                                intent.putExtra("player_color", userId.equals(white) ? "white" : "black");
-                                intent.putExtra("playerWhiteId", white);
-                                intent.putExtra("playerBlackId", black);
+                                if(snapshot.child("moves").getValue() == null){
+                                    // Partie trouvée mais pas encore commencée, on met dedans car elle est nouvelle
+                                    String gameId = snapshot.getKey();
+                                    System.out.println("Partie trouvée après matchmaking !");
 
-                                startActivity(intent);
-                                finish();
+                                    Intent intent = new Intent(MatchmakingActivity.this, ChessGameActivity.class);
+                                    intent.putExtra("game_mode", mode);
+                                    intent.putExtra("game_id", gameId);
+                                    intent.putExtra("player_color", userId.equals(white) ? "white" : "black");
+                                    intent.putExtra("playerWhiteId", white);
+                                    intent.putExtra("playerBlackId", black);
+
+                                    startActivity(intent);
+                                    finish();
+                                }
+
+
                             }
                         }
 
