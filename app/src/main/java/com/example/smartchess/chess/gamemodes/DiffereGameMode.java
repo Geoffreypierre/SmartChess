@@ -176,6 +176,9 @@ public class DiffereGameMode implements GameMode {
                                             String textpop = whitename + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
 
+                                            //mettre a jour l'élo des deux joueurs
+                                            //TODO
+
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
 
@@ -215,6 +218,9 @@ public class DiffereGameMode implements GameMode {
                                             String blackname = document.getString("username");
                                             String textpop = blackname + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
+
+                                            //mettre a jour l'élo des deux joueurs
+                                            //TODO
 
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);

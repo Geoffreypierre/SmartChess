@@ -136,7 +136,7 @@ public class MultiplayerGameMode implements GameMode {
                         db.collection("users").document(playerWhite)
                                 .get()
                                 .addOnCompleteListener(task -> {
-                                    String eloChange = "+0 Elo";
+                                    String eloChange = "10 Elo";
                                     if (task.isSuccessful()) {
                                         DocumentSnapshot document = task.getResult();
 
@@ -146,6 +146,13 @@ public class MultiplayerGameMode implements GameMode {
                                             String textpop = whitename + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
 
+                                            //mettre a jour l'élo des deux joueurs
+                                            //TODO
+
+
+
+
+
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
 
@@ -154,7 +161,7 @@ public class MultiplayerGameMode implements GameMode {
                                             String whitename = "Joueur blanc";
                                             String textpop = whitename + " a gagné !\n"+description;
 
-                                            dialogCallback.show(textpop,"+0 Elo");
+                                            dialogCallback.show(textpop,"10 Elo");
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
                                         }
@@ -173,7 +180,7 @@ public class MultiplayerGameMode implements GameMode {
                                 .get()
                                 .addOnCompleteListener(task -> {
 
-                                    String eloChange = "+0 Elo";
+                                    String eloChange = "10 Elo";
 
                                     System.out.println("appel firestore");
                                     if (task.isSuccessful()) {
@@ -185,6 +192,9 @@ public class MultiplayerGameMode implements GameMode {
                                             String blackname = document.getString("username");
                                             String textpop = blackname + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
+
+                                            //mettre a jour l'élo des deux joueurs
+                                            //TODO
 
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
