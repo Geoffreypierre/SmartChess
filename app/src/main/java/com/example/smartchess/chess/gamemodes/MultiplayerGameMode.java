@@ -24,6 +24,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -147,9 +148,13 @@ public class MultiplayerGameMode implements GameMode {
                                             dialogCallback.show(textpop,eloChange);
 
                                             //mettre a jour l'élo des deux joueurs
-                                            //TODO
 
 
+                                            db.collection("users").document(playerWhite)
+                                                    .update("elo", FieldValue.increment(+10));
+
+                                            db.collection("users").document(playerBlack)
+                                                    .update("elo", FieldValue.increment(-10));
 
 
 
@@ -194,7 +199,12 @@ public class MultiplayerGameMode implements GameMode {
                                             dialogCallback.show(textpop,eloChange);
 
                                             //mettre a jour l'élo des deux joueurs
-                                            //TODO
+                                            db.collection("users").document(playerWhite)
+                                                    .update("elo", FieldValue.increment(-10));
+
+                                            db.collection("users").document(playerBlack)
+                                                    .update("elo", FieldValue.increment(+10));
+
 
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
@@ -515,7 +525,7 @@ public class MultiplayerGameMode implements GameMode {
                 if (quitterId != null && !quitterId.equals(currentUserId)) {
                     // L'autre joueur a abandonné => on gagne
                     Log.d("Multiplayer", "L'autre joueur a abandonné !");
-                    onGameOver(currentUserId, quitterId, "Victoire par abandon");
+                    onGameOver(currentUserId, null, "Victoire par abandon");
                 }
             }
 

@@ -24,6 +24,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -176,8 +177,14 @@ public class DiffereGameMode implements GameMode {
                                             String textpop = whitename + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
 
+                                            System.out.println("maj 1 elo " + playerWhite + " " + playerBlack + " " + partie.getWinnerId() );
                                             //mettre a jour l'élo des deux joueurs
-                                            //TODO
+                                            db.collection("users").document(playerWhite)
+                                                    .update("elo", FieldValue.increment(+10));
+
+                                            db.collection("users").document(playerBlack)
+                                                    .update("elo", FieldValue.increment(-10));
+
 
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);
@@ -214,13 +221,20 @@ public class DiffereGameMode implements GameMode {
                                         System.out.println("Document : " + document);
                                         System.out.println("Document ID : " + document.getId());
                                         if (document.exists()) {
+                                            System.out.println("maj 2 elo" + playerWhite + " " + playerBlack + " " + partie.getWinnerId() );
+
                                             System.out.println("Document existe");
                                             String blackname = document.getString("username");
                                             String textpop = blackname + " a gagné !\n"+description;
                                             dialogCallback.show(textpop,eloChange);
 
                                             //mettre a jour l'élo des deux joueurs
-                                            //TODO
+                                            db.collection("users").document(playerWhite)
+                                                    .update("elo", FieldValue.increment(-10));
+
+                                            db.collection("users").document(playerBlack)
+                                                    .update("elo", FieldValue.increment(+10));
+
 
                                             GameOverInfo gameOverInfo = new GameOverInfo(textpop, eloChange);
                                             gamesRef.child(gameId).child("gameOver").setValue(gameOverInfo);

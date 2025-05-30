@@ -58,6 +58,7 @@ public class PlayerInfoView extends LinearLayout {
 
         timerTextView = findViewById(R.id.text_timer);
         timerTextView.setVisibility(GONE);
+        scoreDiffTextView.setVisibility(GONE);
     }
 
 
@@ -95,7 +96,7 @@ public class PlayerInfoView extends LinearLayout {
     public void setTimer(ChessTimer timer) {
         this.chessTimer = timer;
 
-        if (timerTextView != null) {
+        if (timerTextView != null && chessTimer != null) {
             timerTextView.setVisibility(VISIBLE);
 
             chessTimer.setOnTickRunnable(() -> {

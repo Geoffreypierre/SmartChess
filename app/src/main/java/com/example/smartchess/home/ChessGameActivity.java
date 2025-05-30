@@ -131,6 +131,13 @@ public class ChessGameActivity extends AppCompatActivity {
                 chatBtn.setVisibility(View.GONE);
                 backBtn.setVisibility(View.GONE);
 
+                ChessTimer timerWhite = new ChessTimer(10*60*1000,1000);
+                playerInfoViewWhite.setTimer(timerWhite);
+
+                ChessTimer timerBlack = new ChessTimer(10*60*1000,1000);
+                playerInfoViewBlack.setTimer(timerBlack);
+
+
             } else if (gameModeString.equals("multiplayer")) {
                 titleView.setText("Partie en ligne");
                 multi_game_id = intent.getStringExtra("game_id");
@@ -155,6 +162,12 @@ public class ChessGameActivity extends AppCompatActivity {
                 chatRef = FirebaseDatabase.getInstance().getReference("chats").child(multi_game_id);
                 setupChatListener();
                 setupChatDialog();
+
+
+                playerInfoViewWhite.setTimer(null);
+
+                playerInfoViewBlack.setTimer(null);
+
             }
             else if (gameModeString.equals("differe")) {
                 titleView.setText("Partie en différé");
@@ -178,6 +191,11 @@ public class ChessGameActivity extends AppCompatActivity {
                 chatRef = FirebaseDatabase.getInstance().getReference("chats").child(multi_game_id);
                 setupChatListener();
                 setupChatDialog();
+
+                playerInfoViewWhite.setTimer(null);
+
+                playerInfoViewBlack.setTimer(null);
+
             }
             else {
                 Toast.makeText(this, "Invalid game mode", Toast.LENGTH_SHORT).show();
@@ -188,12 +206,6 @@ public class ChessGameActivity extends AppCompatActivity {
             mode = new LocalGameMode();
             chatBtn.setVisibility(View.GONE);
         }
-
-        ChessTimer timerWhite = new ChessTimer(1*60*1000,1000);
-        playerInfoViewWhite.setTimer(timerWhite);
-
-        ChessTimer timerBlack = new ChessTimer(1*60*1000,1000);
-        playerInfoViewBlack.setTimer(timerBlack);
 
         chessBoardView.setOnPieceCapturedListener(new ChessGame.OnPieceCapturedListener() {
             @Override
@@ -343,7 +355,7 @@ public class ChessGameActivity extends AppCompatActivity {
                     quitDialogMultiplayer.dismiss();
 
                     String winner = game.isWhiteTurn() ? "Noirs" : "Blancs";
-                    mode.onGameOver(winner, currentUserId, "Abandon");
+                    mode.onGameOver(null, currentUserId, "Abandon");
 
                     if (chatRef != null) {
                         chatRef.removeValue();
@@ -380,7 +392,7 @@ public class ChessGameActivity extends AppCompatActivity {
                     quitDialogDiffere.dismiss();
 
                     String winner = game.isWhiteTurn() ? "Noirs" : "Blancs";
-                    mode.onGameOver(winner, currentUserId, "Abandon");
+                    mode.onGameOver(null, currentUserId, "Abandon");
 
                     finishActivity();
                 }
@@ -561,7 +573,9 @@ public class ChessGameActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!isActivityDestroyed) {
                     gameOverDialog.dismiss();
-                    finishActivity();
+                    Intent intent = new Intent(getApplicationContext(), PlayActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
                 }
             }
         });
@@ -594,7 +608,9 @@ public class ChessGameActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!isActivityDestroyed) {
                     gameOverDialog.dismiss();
-                    finishActivity();
+                    Intent intent = new Intent(getApplicationContext(), PlayActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
                 }
             }
         });
