@@ -341,7 +341,7 @@ public class ChessGame {
                     gameOverCallback.onGameOver(
                             piece.getColor() == Piece.Color.WHITE ? "White" : "Black",
                             opponentColor == Piece.Color.WHITE ? "White" : "Black",
-                            "Victoire par échec et mat"
+                            "échec et mat"
                     );
                 }
             } else {

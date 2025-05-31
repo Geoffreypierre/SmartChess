@@ -9,13 +9,10 @@ public class UserSession {
     private Editor editor;
     private Context context;
 
-    // SharedPreferences mode
     private int PRIVATE_MODE = 0;
 
-    // SharedPreferences file name
     private static final String PREF_NAME = "SmartChessUserSession";
 
-    // SharedPreferences keys
     private static final String IS_LOGIN = "IsLoggedIn";
     private static final String KEY_USER_ID = "user_id";
     private static final String KEY_USERNAME = "username";
@@ -28,9 +25,6 @@ public class UserSession {
         editor = pref.edit();
     }
 
-    /**
-     * Crée la session de connexion
-     * */
     public void createLoginSession(String userId, String username, int elo, String profilePicture) {
         editor.putBoolean(IS_LOGIN, true);
         editor.putString(KEY_USER_ID, userId);
@@ -40,16 +34,10 @@ public class UserSession {
         editor.commit();
     }
 
-    /**
-     * Vérifie l'état de connexion
-     * */
     public boolean isLoggedIn() {
         return pref.getBoolean(IS_LOGIN, false);
     }
 
-    /**
-     * Récupère les données de session de l'utilisateur
-     * */
     public String getUserId() {
         return pref.getString(KEY_USER_ID, null);
     }
@@ -66,9 +54,6 @@ public class UserSession {
         return pref.getString(KEY_PROFILE_PICTURE, null);
     }
 
-    /**
-     * Déconnecte l'utilisateur et efface les données
-     * */
     public void logoutUser() {
         editor.clear();
         editor.commit();

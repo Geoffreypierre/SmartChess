@@ -29,6 +29,14 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import android.content.Intent;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +64,13 @@ public class FriendsFragment extends Fragment {
     private List<String> currentFriendIds;
     private List<FriendRequestModel> pendingRequests;
 
+    private DatabaseReference challengeRef;
+    private ChildEventListener challengeListener;
+    private List<ChallengeModel> receivedChallenges = new ArrayList<>();
+
+    private ChildEventListener sentChallengesListener;
+    private DatabaseReference sentChallengesRef;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -65,7 +80,6 @@ public class FriendsFragment extends Fragment {
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         userSession = new UserSession(getContext());
 
-        // Récupérer les informations de l'utilisateur courant
         loadCurrentUserInfo();
 
         initViews(view);
@@ -74,8 +88,269 @@ public class FriendsFragment extends Fragment {
 
         loadFriendsList();
         checkForPendingRequests();
+        setupChallengeListener();
+        setupSentChallengesListener();
 
         return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        if (challengeRef != null && challengeListener != null) {
+            challengeRef.removeEventListener(challengeListener);
+        }
+
+        if (sentChallengesRef != null && sentChallengesListener != null) {
+            sentChallengesRef.removeEventListener(sentChallengesListener);
+        }
+    }
+
+    private void sendChallenge(String targetUserId, String targetUsername) {
+        DatabaseReference challengeRef = FirebaseDatabase.getInstance()
+                .getReference("challenges")
+                .child(targetUserId)
+                .push();
+
+        String challengeId = challengeRef.getKey();
+
+        ChallengeModel challenge = new ChallengeModel(
+                challengeId,
+                currentUserId,
+                currentUsername,
+                currentProfilePic,
+                targetUserId,
+                targetUsername,
+                System.currentTimeMillis()
+        );
+
+        challengeRef.setValue(challenge)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(getContext(), "Défi envoyé à " + targetUsername, Toast.LENGTH_SHORT).show();
+
+                    DatabaseReference ourChallengeRef = FirebaseDatabase.getInstance()
+                            .getReference("sentChallenges")
+                            .child(currentUserId)
+                            .child(challengeId);
+                    ourChallengeRef.setValue(challenge);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(getContext(), "Erreur lors de l'envoi du défi", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void showChallengeDialog(ChallengeModel challenge) {
+        if (getContext() == null || isDetached()) return;
+
+        Dialog dialog = new Dialog(getContext());
+        dialog.setContentView(R.layout.dialog_challenge_received);
+        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        ImageView profileImageView = dialog.findViewById(R.id.challenge_profile_image);
+        TextView messageTextView = dialog.findViewById(R.id.challenge_message_text);
+        Button declineButton = dialog.findViewById(R.id.btn_decline_challenge);
+        Button acceptButton = dialog.findViewById(R.id.btn_accept_challenge);
+
+        if (challenge.getChallengerProfilePic() != null && !challenge.getChallengerProfilePic().isEmpty()) {
+            Glide.with(getContext())
+                    .load(challenge.getChallengerProfilePic())
+                    .placeholder(R.drawable.profile_picture_placeholder)
+                    .into(profileImageView);
+        }
+
+        messageTextView.setText(challenge.getChallengerUsername() + " vous défie à une partie d'échecs !");
+
+        declineButton.setOnClickListener(v -> {
+            respondToChallenge(challenge, "declined");
+            dialog.dismiss();
+        });
+
+        acceptButton.setOnClickListener(v -> {
+            respondToChallenge(challenge, "accepted");
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    private void respondToChallenge(ChallengeModel challenge, String response) {
+        if (response.equals("accepted")) {
+            createMultiplayerGame(challenge);
+        } else {
+            FirebaseDatabase.getInstance()
+                    .getReference("challenges")
+                    .child(currentUserId)
+                    .child(challenge.getId())
+                    .removeValue();
+
+            Toast.makeText(getContext(), "Défi refusé", Toast.LENGTH_SHORT).show();
+        }
+
+        receivedChallenges.remove(challenge);
+    }
+
+    private void createMultiplayerGame(ChallengeModel challenge) {
+        if (getContext() == null || isDetached()) return;
+
+        DocumentReference gameRef = db.collection("multiplayerGames").document();
+        String gameId = gameRef.getId();
+
+        Map<String, Object> gameData = new HashMap<>();
+        gameData.put("gameId", gameId);
+        gameData.put("playerWhiteId", challenge.getChallengerId());
+        gameData.put("playerBlackId", currentUserId);
+        gameData.put("status", "active");
+        gameData.put("createdAt", System.currentTimeMillis());
+        gameData.put("moves", new ArrayList<>());
+
+        gameRef.set(gameData)
+                .addOnSuccessListener(aVoid -> {
+                    if (getContext() == null || isDetached()) return; // Vérification avant Toast
+
+                    FirebaseDatabase.getInstance()
+                            .getReference("challenges")
+                            .child(currentUserId)
+                            .child(challenge.getId())
+                            .child("status")
+                            .setValue("accepted");
+
+                    FirebaseDatabase.getInstance()
+                            .getReference("challenges")
+                            .child(currentUserId)
+                            .child(challenge.getId())
+                            .child("gameId")
+                            .setValue(gameId);
+
+                    FirebaseDatabase.getInstance()
+                            .getReference("sentChallenges")
+                            .child(challenge.getChallengerId())
+                            .child(challenge.getId())
+                            .child("status")
+                            .setValue("accepted");
+
+                    FirebaseDatabase.getInstance()
+                            .getReference("sentChallenges")
+                            .child(challenge.getChallengerId())
+                            .child(challenge.getId())
+                            .child("gameId")
+                            .setValue(gameId);
+
+                    startChessGame(gameId, "black", challenge.getChallengerId(), currentUserId);
+                })
+                .addOnFailureListener(e -> {
+                    if (getContext() != null && !isDetached()) {
+                        Toast.makeText(getContext(), "Erreur lors de la création de la partie", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void setupSentChallengesListener() {
+        sentChallengesRef = FirebaseDatabase.getInstance()
+                .getReference("sentChallenges")
+                .child(currentUserId);
+
+        sentChallengesListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {}
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String previousChildName) {
+                if (getContext() == null || isDetached()) return;
+
+                ChallengeModel challenge = dataSnapshot.getValue(ChallengeModel.class);
+                if (challenge != null && challenge.getStatus().equals("accepted")) {
+                    startMultiplayerGame(challenge);
+                    dataSnapshot.getRef().removeValue();
+                }
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {}
+            @Override
+            public void onCancelled(DatabaseError databaseError) {}
+        };
+
+        sentChallengesRef.addChildEventListener(sentChallengesListener);
+    }
+
+
+    private void startMultiplayerGame(ChallengeModel challenge) {
+        startChessGame(challenge.getGameId(), "white", currentUserId, challenge.getTargetId());
+
+        FirebaseDatabase.getInstance()
+                .getReference("challenges")
+                .child(challenge.getTargetId())
+                .child(challenge.getId())
+                .removeValue();
+
+        FirebaseDatabase.getInstance()
+                .getReference("sentChallenges")
+                .child(currentUserId)
+                .child(challenge.getId())
+                .removeValue();
+    }
+
+    private void startChessGame(String gameId, String playerColor, String playerWhiteId, String playerBlackId) {
+        if (getContext() == null || getActivity() == null || isDetached()) {
+            return;
+        }
+
+        Intent intent = new Intent(getContext(), ChessGameActivity.class);
+        intent.putExtra("game_mode", "multiplayer");
+        intent.putExtra("game_id", gameId);
+        intent.putExtra("player_color", playerColor);
+        intent.putExtra("playerWhiteId", playerWhiteId);
+        intent.putExtra("playerBlackId", playerBlackId);
+        startActivity(intent);
+    }
+
+    private void setupChallengeListener() {
+        challengeRef = FirebaseDatabase.getInstance().getReference("challenges").child(currentUserId);
+
+        challengeListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {
+                if (getContext() == null || isDetached()) return;
+
+                ChallengeModel challenge = dataSnapshot.getValue(ChallengeModel.class);
+                if (challenge != null && challenge.getStatus().equals("pending")) {
+                    if (challenge.getTargetId().equals(currentUserId)) {
+                        receivedChallenges.add(challenge);
+                        showChallengeDialog(challenge);
+                    }
+                }
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String previousChildName) {
+                if (getContext() == null || isDetached()) return;
+
+                ChallengeModel challenge = dataSnapshot.getValue(ChallengeModel.class);
+                if (challenge != null && challenge.getStatus().equals("accepted")) {
+                    if (challenge.getChallengerId().equals(currentUserId)) {
+                        startMultiplayerGame(challenge);
+                    }
+                }
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {}
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {}
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                if (getContext() != null && !isDetached()) {
+                    Toast.makeText(getContext(), "Erreur de connexion aux défis", Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+
+        challengeRef.addChildEventListener(challengeListener);
     }
 
     private void loadCurrentUserInfo() {
@@ -220,7 +495,6 @@ public class FriendsFragment extends Fragment {
 
                                 boolean isAlreadyFriend = currentFriendIds.contains(id);
 
-                                // Vérifier si une demande est déjà envoyée à cet utilisateur
                                 boolean requestAlreadySent = false;
                                 for (FriendRequestModel request : pendingRequests) {
                                     if (request.getReceiverId().equals(id) &&
@@ -252,7 +526,6 @@ public class FriendsFragment extends Fragment {
     }
 
     private void sendFriendRequest(String receiverId) {
-        // Créer une nouvelle demande d'amitié
         DocumentReference requestRef = db.collection("friendRequests").document();
         String requestId = requestRef.getId();
 
@@ -282,8 +555,6 @@ public class FriendsFragment extends Fragment {
 
     private void checkForPendingRequests() {
         pendingRequests.clear();
-
-        // Vérifier les demandes envoyées
         db.collection("friendRequests")
                 .whereEqualTo("senderId", currentUserId)
                 .whereEqualTo("status", "pending")
@@ -297,7 +568,6 @@ public class FriendsFragment extends Fragment {
                     }
                 });
 
-        // Vérifier les demandes reçues
         db.collection("friendRequests")
                 .whereEqualTo("receiverId", currentUserId)
                 .whereEqualTo("status", "pending")
@@ -311,7 +581,6 @@ public class FriendsFragment extends Fragment {
                             pendingRequests.add(request);
                         }
 
-                        // Mettre à jour le badge de notification si nécessaire
                         if (!receivedRequests.isEmpty()) {
                             pendingRequestsButton.setText("Demandes (" + receivedRequests.size() + ")");
                             pendingRequestsButton.setVisibility(View.VISIBLE);
@@ -323,7 +592,6 @@ public class FriendsFragment extends Fragment {
     }
 
     private void showPendingRequests() {
-        // Afficher les demandes reçues dans une popup ou un fragment
         List<FriendRequestModel> receivedRequests = new ArrayList<>();
         for (FriendRequestModel request : pendingRequests) {
             if (request.getReceiverId().equals(currentUserId) && request.getStatus().equals("pending")) {
@@ -336,7 +604,6 @@ public class FriendsFragment extends Fragment {
             return;
         }
 
-        // Afficher la première demande
         showFriendRequestDialog(receivedRequests.get(0));
     }
 
@@ -350,7 +617,6 @@ public class FriendsFragment extends Fragment {
         Button declineButton = dialog.findViewById(R.id.btn_decline);
         Button acceptButton = dialog.findViewById(R.id.btn_accept);
 
-        // Charger l'image de profil
         if (request.getSenderProfilePicture() != null && !request.getSenderProfilePicture().isEmpty()) {
             Glide.with(getContext())
                     .load(request.getSenderProfilePicture())
@@ -374,18 +640,15 @@ public class FriendsFragment extends Fragment {
     }
 
     private void respondToFriendRequest(FriendRequestModel request, String response) {
-        // Mettre à jour le statut de la demande
         db.collection("friendRequests").document(request.getId())
                 .update("status", response)
                 .addOnSuccessListener(aVoid -> {
                     if (response.equals("accepted")) {
-                        // Ajouter les deux utilisateurs comme amis mutuels
                             addAsFriends(request.getSenderId(), currentUserId);
                     } else {
                         Toast.makeText(getContext(), "Demande refusée", Toast.LENGTH_SHORT).show();
                     }
 
-                    // Vérifier s'il y a d'autres demandes en attente
                     pendingRequests.remove(request);
                     checkForPendingRequests();
                 })
@@ -395,11 +658,9 @@ public class FriendsFragment extends Fragment {
     }
 
     private void addAsFriends(String user1Id, String user2Id) {
-        // Ajouter user2 aux amis de user1
         db.collection("users").document(user1Id)
                 .update("friends", FieldValue.arrayUnion(user2Id))
                 .addOnSuccessListener(aVoid -> {
-                    // Ajouter user1 aux amis de user2
                     db.collection("users").document(user2Id)
                             .update("friends", FieldValue.arrayUnion(user1Id))
                             .addOnSuccessListener(aVoid2 -> {
@@ -467,7 +728,7 @@ public class FriendsFragment extends Fragment {
                 }
 
                 challengeButton.setOnClickListener(v -> {
-                    Toast.makeText(getContext(), "Défi envoyé à " + friend.getUsername(), Toast.LENGTH_SHORT).show();
+                    sendChallenge(friend.getId(), friend.getUsername());
                 });
             }
         }
@@ -597,5 +858,60 @@ public class FriendsFragment extends Fragment {
         public void setRequestSent(boolean requestSent) {
             this.isRequestSent = requestSent;
         }
+    }
+
+    public static class ChallengeModel {
+        private String id;
+        private String challengerId;
+        private String challengerUsername;
+        private String challengerProfilePic;
+        private String targetId;
+        private String targetUsername;
+        private String status;
+        private long timestamp;
+        private String gameId;
+
+        public ChallengeModel() {
+            this.status = "pending";
+        }
+
+        public ChallengeModel(String id, String challengerId, String challengerUsername,
+                              String challengerProfilePic, String targetId, String targetUsername, long timestamp) {
+            this.id = id;
+            this.challengerId = challengerId;
+            this.challengerUsername = challengerUsername;
+            this.challengerProfilePic = challengerProfilePic;
+            this.targetId = targetId;
+            this.targetUsername = targetUsername;
+            this.status = "pending";
+            this.timestamp = timestamp;
+        }
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+
+        public String getChallengerId() { return challengerId; }
+        public void setChallengerId(String challengerId) { this.challengerId = challengerId; }
+
+        public String getChallengerUsername() { return challengerUsername; }
+        public void setChallengerUsername(String challengerUsername) { this.challengerUsername = challengerUsername; }
+
+        public String getChallengerProfilePic() { return challengerProfilePic; }
+        public void setChallengerProfilePic(String challengerProfilePic) { this.challengerProfilePic = challengerProfilePic; }
+
+        public String getTargetId() { return targetId; }
+        public void setTargetId(String targetId) { this.targetId = targetId; }
+
+        public String getTargetUsername() { return targetUsername; }
+        public void setTargetUsername(String targetUsername) { this.targetUsername = targetUsername; }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+
+        public long getTimestamp() { return timestamp; }
+        public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+        public String getGameId() { return gameId; }
+        public void setGameId(String gameId) { this.gameId = gameId; }
     }
 }

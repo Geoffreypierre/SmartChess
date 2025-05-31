@@ -89,7 +89,7 @@ public class LocalGameMode implements GameMode {
         if (dialogCallback != null) {
             String winnerText;
             if (winner != null) {
-                winnerText = "Victoire des " + winner + " par " + description;
+                winnerText = "Victoire du " + winner + " par " + description;
             } else {
                 winnerText = "Match nul !";
             }
