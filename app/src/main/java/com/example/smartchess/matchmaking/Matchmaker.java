@@ -122,7 +122,7 @@ public class Matchmaker implements  MatchmakerInterface {
     }
 
 
-    private void createGame(String whiteUid, String blackUid) {
+    public String createGame(String whiteUid, String blackUid) {
         DatabaseReference newGameRef = gamesRef.push();
 
         Map<String, Object> gameData = new HashMap<>();
@@ -138,6 +138,7 @@ public class Matchmaker implements  MatchmakerInterface {
                 .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur création partie", e));
 
         gameId = newGameRef.getKey();
+        return gameId;
     }
 
     public void leaveQueue() {
@@ -150,5 +151,10 @@ public class Matchmaker implements  MatchmakerInterface {
                 .addOnSuccessListener(unused -> Log.d("Matchmaker", "Partie terminée !"))
                 .addOnFailureListener(e -> Log.e("Matchmaker", "Erreur lors de la suppression de la partie", e));
     }
+
+    public String getGameId() {
+        return gameId;
+    }
+
 
 }

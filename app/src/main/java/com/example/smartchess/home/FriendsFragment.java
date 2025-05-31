@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.smartchess.R;
 import com.example.smartchess.auth.UserSession;
+import com.example.smartchess.matchmaking.Matchmaker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -191,58 +192,43 @@ public class FriendsFragment extends Fragment {
     }
 
     private void createMultiplayerGame(ChallengeModel challenge) {
-        if (getContext() == null || isDetached()) return;
 
-        DocumentReference gameRef = db.collection("multiplayerGames").document();
-        String gameId = gameRef.getId();
+        if (getContext() == null || isDetached()) return; // Vérification avant Toast
 
-        Map<String, Object> gameData = new HashMap<>();
-        gameData.put("gameId", gameId);
-        gameData.put("playerWhiteId", challenge.getChallengerId());
-        gameData.put("playerBlackId", currentUserId);
-        gameData.put("status", "active");
-        gameData.put("createdAt", System.currentTimeMillis());
-        gameData.put("moves", new ArrayList<>());
+        Matchmaker matchmaker = new Matchmaker(currentUserId, userSession.getElo(), "any");
+        String gameId = matchmaker.createGame(challenge.getChallengerId(), currentUserId);
 
-        gameRef.set(gameData)
-                .addOnSuccessListener(aVoid -> {
-                    if (getContext() == null || isDetached()) return; // Vérification avant Toast
 
-                    FirebaseDatabase.getInstance()
-                            .getReference("challenges")
-                            .child(currentUserId)
-                            .child(challenge.getId())
-                            .child("status")
-                            .setValue("accepted");
+        FirebaseDatabase.getInstance()
+                .getReference("challenges")
+                .child(currentUserId)
+                .child(challenge.getId())
+                .child("status")
+                .setValue("accepted");
 
-                    FirebaseDatabase.getInstance()
-                            .getReference("challenges")
-                            .child(currentUserId)
-                            .child(challenge.getId())
-                            .child("gameId")
-                            .setValue(gameId);
+        FirebaseDatabase.getInstance()
+                .getReference("challenges")
+                .child(currentUserId)
+                .child(challenge.getId())
+                .child("gameId")
+                .setValue(gameId);
 
-                    FirebaseDatabase.getInstance()
-                            .getReference("sentChallenges")
-                            .child(challenge.getChallengerId())
-                            .child(challenge.getId())
-                            .child("status")
-                            .setValue("accepted");
+        FirebaseDatabase.getInstance()
+                .getReference("sentChallenges")
+                .child(challenge.getChallengerId())
+                .child(challenge.getId())
+                .child("status")
+                .setValue("accepted");
 
-                    FirebaseDatabase.getInstance()
-                            .getReference("sentChallenges")
-                            .child(challenge.getChallengerId())
-                            .child(challenge.getId())
-                            .child("gameId")
-                            .setValue(gameId);
+        FirebaseDatabase.getInstance()
+                .getReference("sentChallenges")
+                .child(challenge.getChallengerId())
+                .child(challenge.getId())
+                .child("gameId")
+                .setValue(gameId);
 
-                    startChessGame(gameId, "black", challenge.getChallengerId(), currentUserId);
-                })
-                .addOnFailureListener(e -> {
-                    if (getContext() != null && !isDetached()) {
-                        Toast.makeText(getContext(), "Erreur lors de la création de la partie", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        startChessGame(gameId, "black", challenge.getChallengerId(), currentUserId);
+
     }
 
     private void setupSentChallengesListener() {
